@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'models/app_models.dart';
 import 'services/local_store.dart';
+import 'services/voice_service.dart';
 import 'services/waste_api.dart';
 import 'views/chat_view.dart';
 import 'views/notes_view.dart';
@@ -24,6 +25,7 @@ class _WasteShellState extends State<WasteShell> {
   late List<Note> _notes;
   late List<ChatMessage> _history;
   final WasteApi _api = WasteApi();
+  final VoiceService _voice = VoiceService();
   WasteSection _section = WasteSection.chat;
   String? _token;
   bool _loading = true;
@@ -40,6 +42,12 @@ class _WasteShellState extends State<WasteShell> {
     _notes = widget.store.notes;
     _history = widget.store.history;
     _token = await widget.store.readToken();
+    _voice.configure(
+      language: _settings.voiceLanguage,
+      rate: _settings.voiceRate,
+      volume: _settings.voiceVolume,
+    );
+    await _voice.initialize();
     if (!mounted) return;
     setState(() => _loading = false);
     if (_settings.showSetup) {
@@ -80,6 +88,23 @@ class _WasteShellState extends State<WasteShell> {
 
   Future<void> _setMode(String mode) async {
     _settings = _settings.copyWith(mode: mode);
+    await widget.store.saveSettings(_settings);
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _saveVoiceSettings({
+    bool? autoSpeak,
+    String? language,
+    double? rate,
+    double? volume,
+  }) async {
+    _settings = _settings.copyWith(
+      autoSpeak: autoSpeak,
+      voiceLanguage: language,
+      voiceRate: rate,
+      voiceVolume: volume,
+    );
+    _voice.configure(language: language, rate: rate, volume: volume);
     await widget.store.saveSettings(_settings);
     if (mounted) setState(() {});
   }
@@ -141,6 +166,12 @@ class _WasteShellState extends State<WasteShell> {
   }
 
   @override
+  void dispose() {
+    _voice.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -155,8 +186,10 @@ class _WasteShellState extends State<WasteShell> {
           history: _history,
           onModeChanged: _setMode,
           onMessages: _appendHistory,
-          onOpenSettings: () => _navigate(WasteSection.settings),
-          onBusyChanged: _setChatBusy,
+           onOpenSettings: () => _navigate(WasteSection.settings),
+           onBusyChanged: _setChatBusy,
+           voice: _voice,
+           autoSpeak: _settings.autoSpeak,
         ),
       WasteSection.notes => NotesView(
           notes: _notes,
@@ -174,8 +207,14 @@ class _WasteShellState extends State<WasteShell> {
           onClearChats: _clearHistory,
           onClearNotes: _clearNotes,
           onDisconnect: _disconnect,
-          onOpenChat: () => _navigate(WasteSection.chat),
-        ),
+           onOpenChat: () => _navigate(WasteSection.chat),
+           voice: _voice,
+           autoSpeak: _settings.autoSpeak,
+           voiceLanguage: _settings.voiceLanguage,
+           voiceRate: _settings.voiceRate,
+           voiceVolume: _settings.voiceVolume,
+           onVoiceSettingsChanged: _saveVoiceSettings,
+         ),
     };
     return Scaffold(
       body: SafeArea(

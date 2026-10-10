@@ -21,8 +21,9 @@ flutter run -d windows
 Run the scaffold command from this `client` directory. It generates the
 platform folders and project plumbing; retain the existing `lib/`, `test/`,
 `web-preview/`, and `pubspec.yaml` source while reviewing generated metadata.
-Then run `flutter pub get` so the dependencies are `http`,
-`shared_preferences`, and `flutter_secure_storage`.
+Then run `flutter pub get` so the dependencies include `http`,
+`shared_preferences`, `flutter_secure_storage`, `flutter_tts`, and
+`speech_to_text`.
 
 For Android release networking, verify the generated
 `android/app/src/main/AndroidManifest.xml` contains this permission outside
@@ -59,8 +60,29 @@ chaining to a trusted CA.
 - Windows actions are allowlisted Calculator/Notepad operations and always use
   prepare, a visible confirmation dialog, then confirm. Android does not expose
   computer-companion actions.
-- Speech input and TTS are marked planned; there are no fake microphone or
-  speaker controls.
+- Voice uses the device's native TTS and speech-recognition plugins. Settings
+  prefer Malayalam `ml-IN`, with English India `en-IN` as the selectable
+  fallback, and persist only auto-speak, locale, rate, and volume in ordinary
+  local preferences. Pairing tokens remain in secure storage. Speech text is
+  bounded to 8,000 characters and each new utterance cancels the previous one.
+- Chat has a speaker button for assistant replies, auto-speak, stop/test voice
+  controls in Settings, and push-to-talk. Push-to-talk requires a platform
+  speech-recognition implementation and microphone permission; unsupported or
+  denied recognition is shown as a visible status, recognized text is placed in
+  the composer, and it is never sent automatically. No microphone audio or
+  transcript is stored by the voice feature.
+
+### Voice platform setup and limitations
+
+After generating platform folders, follow the `flutter_tts` and
+`speech_to_text` package instructions for the target platform. Android needs
+the generated manifest's microphone permission for speech recognition and a
+device/emulator with an installed speech service; the user must grant runtime
+permission. Windows needs an installed system speech engine and microphone
+permission. The app reports unavailable engines, denied permission, and native
+plugin failures instead of pretending that speech succeeded. Flutter builds
+remain unverified until Flutter and the generated platform folders are
+installed.
 
 ## Browser preview
 
@@ -71,9 +93,16 @@ is never written to `localStorage`. Entering a token is labeled **TOKEN SET**,
 not authenticated; the API remains the authority. Notes and history do use
 plain `localStorage` and the settings screen labels that privacy boundary.
 Dynamic model and note content is inserted with `textContent`.
+Browser voice uses only `speechSynthesis` device voices and, where exposed by
+the browser, `SpeechRecognition`/`webkitSpeechRecognition`; there is no voice
+API or network speech service. The Voice card reports missing synthesis and
+microphone permission/recognition failures. Voice preferences are the only
+voice values stored in browser storage, and the microphone button places a
+recognized transcript in the composer without sending it.
 `chat_policy.js` exports the pure history/message bound logic for a Node or
-Windows Script Host smoke test; the same policy is embedded in `index.html`
-because the companion serves only `/`.
+Windows Script Host smoke test. `voice_policy.js` covers the pure speech bound
+and locale preference; both policies are embedded or copied into
+`index.html` because the companion serves only `/`.
 
 ## Checks
 
@@ -82,10 +111,12 @@ With Flutter installed, run:
 ```text
 flutter test
 flutter analyze
-# optional browser policy smoke test:
+# browser policy smoke tests:
 node web-preview/chat_policy_test.js
+node web-preview/voice_policy_test.js
 # or on Windows without Node:
 cscript //nologo web-preview/chat_policy_test.js
+cscript //nologo web-preview/voice_policy_test.js
 ```
 
 Those checks could not be executed in the preparation environment because

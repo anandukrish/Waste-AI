@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/app_models.dart';
 import '../services/chat_policy.dart';
 import '../services/waste_api.dart';
+import '../services/voice_service.dart';
 import '../widgets/mode_badge.dart';
 
 class ChatView extends StatefulWidget {
@@ -17,6 +18,8 @@ class ChatView extends StatefulWidget {
     required this.onMessages,
     required this.onOpenSettings,
     required this.onBusyChanged,
+    required this.voice,
+    required this.autoSpeak,
   });
 
   final WasteApi api;
@@ -28,6 +31,8 @@ class ChatView extends StatefulWidget {
   final Future<void> Function(ChatMessage, ChatMessage) onMessages;
   final VoidCallback onOpenSettings;
   final ValueChanged<bool> onBusyChanged;
+  final VoiceService voice;
+  final bool autoSpeak;
 
   @override
   State<ChatView> createState() => _ChatViewState();
@@ -38,9 +43,12 @@ class _ChatViewState extends State<ChatView> {
   final _scroll = ScrollController();
   bool _sending = false;
   String? _error;
+  String? _voiceError;
 
   @override
   void dispose() {
+    widget.voice.stopListening();
+    widget.voice.stop();
     _composer.dispose();
     _scroll.dispose();
     super.dispose();
@@ -99,6 +107,7 @@ class _ChatViewState extends State<ChatView> {
         createdAt: DateTime.now(),
       );
       await widget.onMessages(user, assistant);
+      if (widget.autoSpeak) await _speak(assistant.content);
       // Only clear the submitted text. Preserve anything typed while waiting.
       if (mounted && _composer.text == rawText) _composer.clear();
     } on WasteApiException catch (error) {
@@ -108,6 +117,30 @@ class _ChatViewState extends State<ChatView> {
     } finally {
       widget.onBusyChanged(false);
       if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  Future<void> _speak(String text) async {
+    widget.voice.clearError();
+    await widget.voice.speak(text);
+    if (mounted && widget.voice.error != null) {
+      setState(() => _voiceError = widget.voice.error);
+    }
+  }
+
+  Future<void> _toggleListening() async {
+    if (widget.voice.isListening) {
+      await widget.voice.stopListening();
+      if (mounted) setState(() {});
+      return;
+    }
+    widget.voice.clearError();
+    await widget.voice.startListening((transcript, _) {
+      if (!mounted) return;
+      setState(() => _composer.text = transcript);
+    });
+    if (mounted) {
+      setState(() => _voiceError = widget.voice.error);
     }
   }
 
@@ -129,7 +162,8 @@ class _ChatViewState extends State<ChatView> {
           _modeSelector(context),
           const SizedBox(height: 14),
           Expanded(child: widget.history.isEmpty ? _emptyState(context) : _messages(context)),
-          if (_error != null) _errorBanner(context),
+           if (_error != null) _errorBanner(context),
+          if (_voiceError != null) _voiceErrorBanner(context),
           const SizedBox(height: 10),
           _composerRow(context),
         ]),
@@ -181,7 +215,7 @@ class _ChatViewState extends State<ChatView> {
                   border: Border.all(color: mine ? Theme.of(context).colorScheme.primary.withOpacity(.3) : Colors.white10),
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [Text(mine ? 'YOU' : 'WASTE', style: Theme.of(context).textTheme.labelSmall?.copyWith(letterSpacing: 1, color: mine ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary)), const Spacer(), ModeBadge(mode: message.mode)]),
+                   Row(children: [Text(mine ? 'YOU' : 'WASTE', style: Theme.of(context).textTheme.labelSmall?.copyWith(letterSpacing: 1, color: mine ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary)), const Spacer(), if (!mine) IconButton(tooltip: 'Speak reply', onPressed: () => _speak(message.content), icon: const Icon(Icons.volume_up_outlined, size: 19)), ModeBadge(mode: message.mode)]),
                   const SizedBox(height: 8),
                   SelectableText(message.content),
                 ]),
@@ -199,9 +233,19 @@ class _ChatViewState extends State<ChatView> {
         child: Row(children: [Icon(Icons.info_outline, color: Theme.of(context).colorScheme.onErrorContainer), const SizedBox(width: 8), Expanded(child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer)))]),
       );
 
+  Widget _voiceErrorBanner(BuildContext context) => Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.errorContainer, borderRadius: BorderRadius.circular(12)),
+        child: Row(children: [Icon(Icons.mic_off_outlined, color: Theme.of(context).colorScheme.onErrorContainer), const SizedBox(width: 8), Expanded(child: Text(_voiceError!, style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer))), IconButton(onPressed: () => setState(() => _voiceError = null), icon: const Icon(Icons.close))]),
+      );
+
   Widget _composerRow(BuildContext context) => Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Expanded(child: TextField(controller: _composer, minLines: 1, maxLines: 5, onSubmitted: (_) => _send(), decoration: const InputDecoration(hintText: 'Message the companion…'))),
-        const SizedBox(width: 10),
+         IconButton(tooltip: widget.voice.isListening ? 'Stop listening' : 'Push to talk', onPressed: _toggleListening, icon: Icon(widget.voice.isListening ? Icons.stop_circle_outlined : Icons.mic_none_outlined)),
+         const SizedBox(width: 2),
+         const SizedBox(width: 10),
         FilledButton(onPressed: _sending ? null : _send, style: FilledButton.styleFrom(padding: const EdgeInsets.all(16)), child: _sending ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.arrow_upward)),
       ]);
 }

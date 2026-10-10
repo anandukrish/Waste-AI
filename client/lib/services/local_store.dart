@@ -31,6 +31,10 @@ class LocalStore {
         host: json['host'] as String? ?? 'http://127.0.0.1:8765',
         mode: json['mode'] as String? == 'online' ? 'online' : 'offline',
         showSetup: json['showSetup'] as bool? ?? true,
+        autoSpeak: json['autoSpeak'] as bool? ?? false,
+        voiceLanguage: json['voiceLanguage'] as String? == 'en-IN' ? 'en-IN' : 'ml-IN',
+        voiceRate: _boundedDouble(json['voiceRate'], .5, .1, 1.0),
+        voiceVolume: _boundedDouble(json['voiceVolume'], 1.0, 0.0, 1.0),
       );
     } catch (_) {
       return const AppSettings();
@@ -43,8 +47,17 @@ class LocalStore {
           'host': value.host,
           'mode': value.mode,
           'showSetup': value.showSetup,
+          'autoSpeak': value.autoSpeak,
+          'voiceLanguage': value.voiceLanguage,
+          'voiceRate': value.voiceRate,
+          'voiceVolume': value.voiceVolume,
         }),
       );
+
+  static double _boundedDouble(dynamic value, double fallback, double min, double max) {
+    final number = value is num ? value.toDouble() : fallback;
+    return number.clamp(min, max).toDouble();
+  }
 
   List<Note> get notes => _decodeList(_notesKey, Note.fromJson);
 

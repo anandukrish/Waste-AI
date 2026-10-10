@@ -53,16 +53,36 @@ class AppSettings {
     this.host = 'http://127.0.0.1:8765',
     this.mode = 'offline',
     this.showSetup = true,
+    this.autoSpeak = false,
+    this.voiceLanguage = 'ml-IN',
+    this.voiceRate = 0.5,
+    this.voiceVolume = 1.0,
   });
 
   final String host;
   final String mode;
   final bool showSetup;
+  final bool autoSpeak;
+  final String voiceLanguage;
+  final double voiceRate;
+  final double voiceVolume;
 
-  AppSettings copyWith({String? host, String? mode, bool? showSetup}) =>
+  AppSettings copyWith({
+    String? host,
+    String? mode,
+    bool? showSetup,
+    bool? autoSpeak,
+    String? voiceLanguage,
+    double? voiceRate,
+    double? voiceVolume,
+  }) =>
       AppSettings(
         host: host ?? this.host,
         mode: mode ?? this.mode,
         showSetup: showSetup ?? this.showSetup,
+        autoSpeak: autoSpeak ?? this.autoSpeak,
+        voiceLanguage: voiceLanguage ?? this.voiceLanguage,
+        voiceRate: voiceRate ?? this.voiceRate,
+        voiceVolume: voiceVolume ?? this.voiceVolume,
       );
 }
