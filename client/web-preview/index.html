@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d1018">
+  <title>WASTE · local-first assistant</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0d1018; --panel:#151a25; --panel-2:#1b2130; --line:#293246; --text:#edf2f7; --muted:#9aa6b8; --teal:#4ce0c1; --violet:#ae91ff; --danger:#ff9a9a; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:radial-gradient(circle at 80% -10%, #24213d 0, transparent 38%), var(--bg); color:var(--text); font:15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
+    button, input, textarea, select { font:inherit; }
+    button { cursor:pointer; }
+    .app { display:flex; min-height:100vh; }
+    .rail { width:228px; padding:26px 16px; border-right:1px solid var(--line); background:#11141eaa; backdrop-filter:blur(15px); }
+    .brand { display:flex; align-items:center; gap:11px; margin:0 10px 32px; font-weight:800; letter-spacing:2px; }
+    .brand-mark { display:grid; place-items:center; width:32px; height:32px; border-radius:11px; color:#071711; background:linear-gradient(135deg,var(--teal),var(--violet)); }
+    nav { display:grid; gap:8px; }
+    .nav-button { width:100%; padding:12px 14px; border:1px solid transparent; border-radius:12px; background:transparent; color:var(--muted); text-align:left; }
+    .nav-button:hover, .nav-button.active { color:var(--text); background:var(--panel-2); border-color:var(--line); }
+    .nav-button.active { box-shadow:inset 3px 0 var(--teal); }
+    .main { width:min(980px, 100%); padding:36px clamp(20px, 5vw, 64px); margin:0 auto; }
+    .topline { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px; }
+    h1 { margin:0; font-size:clamp(27px, 4vw, 39px); letter-spacing:-1px; }
+    h2 { margin:0; font-size:19px; }
+    h3 { margin:0 0 6px; font-size:15px; }
+    p { margin:0; color:var(--muted); }
+    .badge { display:inline-flex; align-items:center; gap:7px; padding:6px 10px; border:1px solid; border-radius:99px; font-size:11px; font-weight:800; letter-spacing:1px; }
+    .badge.offline { color:var(--teal); border-color:#4ce0c155; background:#4ce0c112; }
+    .badge.online { color:var(--violet); border-color:#ae91ff55; background:#ae91ff12; }
+    .card { margin-bottom:16px; padding:20px; border:1px solid var(--line); border-radius:18px; background:linear-gradient(145deg,#181d2aee,#131722ee); box-shadow:0 18px 50px #00000018; }
+    .hero { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+    .hero p { max-width:600px; margin-top:7px; }
+    .mode-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+    .mode-switch { display:flex; padding:3px; border:1px solid var(--line); border-radius:12px; background:var(--bg); }
+    .mode-switch button { border:0; padding:8px 12px; border-radius:9px; color:var(--muted); background:transparent; }
+    .mode-switch button.active { color:var(--text); background:var(--panel-2); box-shadow:0 0 0 1px var(--line); }
+    .messages { min-height:290px; max-height:calc(100vh - 340px); overflow:auto; padding:3px 3px 12px; }
+    .empty { display:grid; place-items:center; min-height:290px; padding:30px; border:1px dashed #364159; border-radius:14px; text-align:center; }
+    .empty strong { display:block; margin-bottom:6px; font-size:17px; }
+    .message { max-width:780px; margin:0 0 10px; padding:13px 15px; border:1px solid var(--line); border-radius:14px; background:var(--panel); }
+    .message.user { margin-left:auto; border-color:#4ce0c144; background:#17312f66; }
+    .message-meta { display:flex; justify-content:space-between; gap:10px; margin-bottom:7px; color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.9px; }
+    .message-text { white-space:pre-wrap; overflow-wrap:anywhere; }
+    .mini-badge { color:var(--muted); font-size:10px; letter-spacing:.7px; }
+    .composer { display:flex; gap:10px; align-items:flex-end; margin-top:4px; }
+    textarea, input, select { width:100%; padding:12px 13px; border:1px solid var(--line); border-radius:12px; color:var(--text); background:#10141e; outline:none; }
+    textarea { resize:vertical; min-height:48px; max-height:140px; }
+    textarea:focus, input:focus, select:focus { border-color:var(--teal); box-shadow:0 0 0 3px #4ce0c11b; }
+    button.primary, button.secondary, button.danger { border:1px solid transparent; border-radius:11px; padding:11px 15px; color:#071711; background:var(--teal); font-weight:750; white-space:nowrap; }
+    button.secondary { color:var(--text); border-color:var(--line); background:var(--panel-2); }
+    button.danger { color:#210d0d; background:var(--danger); }
+    button:disabled { cursor:not-allowed; opacity:.45; }
+    .error, .success { margin-top:12px; padding:11px 13px; border-radius:11px; }
+    .error { color:#ffd5d5; border:1px solid #ff9a9a66; background:#5c252544; }
+    .success { color:#c9ffef; border:1px solid #4ce0c155; background:#17453d44; }
+    .notes-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px; }
+    .note { position:relative; min-height:120px; padding:16px; border:1px solid var(--line); border-radius:14px; background:var(--panel); }
+    .note p { color:var(--text); white-space:pre-wrap; overflow-wrap:anywhere; padding-right:25px; }
+    .note small { display:block; margin-top:17px; color:var(--muted); }
+    .icon-button { position:absolute; top:8px; right:8px; padding:7px; border:0; color:var(--muted); background:transparent; }
+    .icon-button:hover { color:var(--danger); }
+    .section-head { display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:16px; }
+    .form-grid { display:grid; gap:12px; max-width:650px; }
+    label { display:grid; gap:6px; color:var(--muted); font-size:13px; }
+    .button-row { display:flex; flex-wrap:wrap; gap:9px; align-items:center; }
+    .muted-note { padding:12px 14px; border-left:3px solid var(--violet); color:var(--muted); background:#ae91ff0e; }
+    .setup { position:fixed; inset:0; display:grid; place-items:center; padding:20px; background:#070910cc; backdrop-filter:blur(8px); z-index:5; }
+    .setup-card { width:min(500px,100%); padding:26px; border:1px solid var(--line); border-radius:20px; background:#171b28; box-shadow:0 25px 100px #0008; }
+    .setup-card h2 { margin-bottom:8px; font-size:24px; }
+    .setup-card .form-grid { margin-top:18px; }
+    .hidden { display:none !important; }
+    @media (max-width:700px) { .app { display:block; } .rail { display:flex; width:100%; padding:12px 14px; border-right:0; border-bottom:1px solid var(--line); } .brand { margin:0 16px 0 0; } nav { display:flex; flex:1; gap:4px; } .nav-button { padding:9px; text-align:center; } .main { padding:24px 15px 30px; } .hero { display:block; } .hero .badge { margin-top:15px; } .topline { margin-bottom:18px; } .messages { max-height:none; min-height:240px; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="rail">
+      <div class="brand"><span class="brand-mark">✦</span><span>WASTE</span></div>
+      <nav aria-label="Main navigation">
+        <button class="nav-button active" data-view="chat">◌ &nbsp; Chat</button>
+        <button class="nav-button" data-view="notes">▤ &nbsp; Notes</button>
+        <button class="nav-button" data-view="settings">⚙ &nbsp; Settings</button>
+      </nav>
+    </aside>
+    <main class="main">
+      <section id="view-chat">
+        <div class="topline"><div><h1>Conversation</h1><p>A private bridge to your local companion.</p></div><span id="top-badge" class="badge offline">● OFFLINE</span></div>
+        <div class="card">
+          <div class="mode-row"><p>Choose a provider path for this request.</p><div class="mode-switch"><button data-mode="offline" class="active">Local</button><button data-mode="online">Online</button></div></div>
+          <div id="messages" class="messages"></div>
+          <div id="chat-error" class="error hidden" role="alert"></div>
+          <div class="composer"><textarea id="composer" rows="1" placeholder="Message the companion…"></textarea><button id="send" class="primary">Send ↑</button></div>
+        </div>
+      </section>
+      <section id="view-notes" class="hidden">
+        <div class="topline"><div><h1>Notes</h1><p>Saved only on this browser.</p></div><span class="badge offline">● LOCAL</span></div>
+        <div class="card"><div class="section-head"><h2>Your notes</h2><div class="button-row"><button id="clear-notes" class="secondary">Clear all</button><button id="new-note" class="primary">＋ New note</button></div></div><div id="notes" class="notes-grid"></div></div>
+      </section>
+      <section id="view-settings" class="hidden">
+        <div class="topline"><div><h1>Settings</h1><p>Connection and privacy controls.</p></div><span id="settings-badge" class="badge offline">● DISCONNECTED</span></div>
+        <div class="card"><div class="section-head"><h2>Companion connection</h2></div><div class="form-grid"><label>Origin<input value="Same origin · /api" readonly></label><label>Pairing token<input id="token" type="password" autocomplete="off" placeholder="Held in memory only"></label><div class="button-row"><button id="pair" class="primary">Pair in memory</button><button id="health" class="secondary">Check health</button><button id="disconnect" class="secondary">Forget token</button></div><div class="muted-note">The browser preview never stores the pairing token. Notes and history use this browser’s plain local storage; treat them as private to this browser profile.</div><div id="settings-status" class="hidden"></div></div></div>
+        <div class="card"><div class="section-head"><h2>Chat mode</h2></div><p>Offline and online are explicit. There is no silent cloud fallback.</p><div class="mode-switch" style="margin-top:14px"><button data-mode="offline" class="active">Local / offline</button><button data-mode="online">Online</button></div></div>
+        <div class="card"><div class="section-head"><h2>Computer companion actions</h2></div><p id="device-note">Fixed allowlisted operations use prepare → review → confirm and a one-use confirmation. Device browsers do not execute computer actions.</p><div class="button-row" style="margin-top:14px"><button id="open-calculator" class="secondary">▣ Open Calculator</button><button id="open-notepad" class="secondary">▤ Open Notepad</button></div><div id="action-status" class="hidden"></div></div>
+        <div class="card"><div class="section-head"><h2>Local data</h2></div><div class="button-row"><button id="clear-history" class="secondary">Clear chats</button><button id="settings-clear-notes" class="secondary">Clear notes</button></div></div>
+        <p class="muted-note">Speech input and text-to-speech are planned. This preview does not show fake microphone controls or pretend to have permission handling.</p>
+      </section>
+    </main>
+  </div>
+  <div id="setup" class="setup">
+    <div class="setup-card"><h2>Welcome to WASTE</h2><p>Your notes work offline and stay in this browser. Chat connects only when you explicitly select a mode and pair with the local companion.</p><div class="form-grid"><label>Pairing token<input id="setup-token" type="password" autocomplete="off" placeholder="Optional for exploring notes"></label><div class="button-row"><button id="setup-explore" class="secondary">Explore locally</button><button id="setup-pair" class="primary">Pair in memory</button></div></div></div>
+  </div>
+  <script>
+    (() => {
+      'use strict';
+      const API = '/api';
+      const NOTES_KEY = 'waste.web.notes';
+      const HISTORY_KEY = 'waste.web.history';
+      const MAX_HISTORY = 40;
+      const CHAT_LIMITS = { maxOutgoingHistoryItems: 30, maxOutgoingHistoryChars: 24000, maxOutgoingItemChars: 8000, maxOutgoingMessageChars: 8000 };
+      let token = '';
+      let mode = 'offline';
+      let history = readList(HISTORY_KEY).slice(-MAX_HISTORY);
+      let notes = readList(NOTES_KEY);
+      let sending = false;
+
+      const $ = (id) => document.getElementById(id);
+      const show = (element, visible) => element.classList.toggle('hidden', !visible);
+      const setMessage = (id, message, kind) => { const box = $(id); box.textContent = message; box.className = kind; };
+      function readList(key) { try { const parsed = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(parsed) ? parsed : []; } catch (_) { return []; } }
+      function save() { localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-MAX_HISTORY))); }
+      function activeMode() { return mode; }
+      function requestHistory(requestMode) { const matching = history.filter((item) => item.mode === requestMode); const newest = []; let totalChars = 0; for (let index = matching.length - 1; index >= 0; index -= 1) { if (newest.length >= CHAT_LIMITS.maxOutgoingHistoryItems || totalChars >= CHAT_LIMITS.maxOutgoingHistoryChars) break; const available = CHAT_LIMITS.maxOutgoingHistoryChars - totalChars; const content = String(matching[index].content || '').slice(0, Math.min(available, CHAT_LIMITS.maxOutgoingItemChars)); if (!content) continue; newest.push({ role: matching[index].role, content }); totalChars += content.length; } return newest.reverse(); }
+      function setMode(value) { mode = value === 'online' ? 'online' : 'offline'; document.querySelectorAll('[data-mode]').forEach((button) => { button.classList.toggle('active', button.dataset.mode === mode); }); const online = mode === 'online'; $('top-badge').textContent = online ? '● ONLINE' : '● OFFLINE'; $('top-badge').className = 'badge ' + (online ? 'online' : 'offline'); }
+      function renderHistory() {
+        const root = $('messages'); root.replaceChildren();
+        if (!history.length) { const empty = document.createElement('div'); empty.className = 'empty'; const wrap = document.createElement('div'); const strong = document.createElement('strong'); strong.textContent = 'Start with a clear mode'; const p = document.createElement('p'); p.textContent = 'Offline and online are explicit. WASTE never invents a response when the companion is unavailable.'; wrap.append(strong, p); empty.append(wrap); root.append(empty); return; }
+        history.forEach((item) => { const message = document.createElement('article'); message.className = 'message ' + (item.role === 'user' ? 'user' : 'assistant'); const meta = document.createElement('div'); meta.className = 'message-meta'; const role = document.createElement('span'); role.textContent = item.role === 'user' ? 'YOU' : 'WASTE'; const badge = document.createElement('span'); badge.className = 'mini-badge'; badge.textContent = String(item.mode || 'offline').toUpperCase(); const content = document.createElement('div'); content.className = 'message-text'; content.textContent = String(item.content || ''); meta.append(role, badge); message.append(meta, content); root.append(message); }); root.scrollTop = root.scrollHeight;
+      }
+      function renderNotes() {
+        const root = $('notes'); root.replaceChildren();
+        if (!notes.length) { const p = document.createElement('p'); p.textContent = 'No notes yet. Add one while offline.'; root.append(p); return; }
+        notes.forEach((note) => { const card = document.createElement('article'); card.className = 'note'; const text = document.createElement('p'); text.textContent = String(note.text || ''); const date = document.createElement('small'); date.textContent = new Date(note.createdAt).toLocaleString(); const remove = document.createElement('button'); remove.className = 'icon-button'; remove.type = 'button'; remove.setAttribute('aria-label', 'Delete note'); remove.textContent = '×'; remove.addEventListener('click', () => { if (window.confirm('Delete this local note?')) { notes = notes.filter((item) => item.id !== note.id); save(); renderNotes(); } }); card.append(text, date, remove); root.append(card); });
+      }
+      async function fetchJson(path, options = {}, authToken = token) {
+        const controller = new AbortController(); const timeoutMs = path === '/chat' ? 100000 : 15000; const timer = window.setTimeout(() => controller.abort(), timeoutMs); const headers = Object.assign({ 'Accept': 'application/json' }, options.headers || {}); if (authToken) headers.Authorization = 'Bearer ' + authToken; if (options.body) headers['Content-Type'] = 'application/json';
+        try { const response = await fetch(API + path, Object.assign({}, options, { headers, signal: controller.signal })); let data; try { data = await response.json(); } catch (_) { throw new Error('The companion returned an unreadable response.'); } if (!response.ok) throw new Error(String(data.error || ('Companion request failed (' + response.status + ').'))); return data; } catch (error) { if (error.name === 'AbortError') throw new Error('The companion took too long to respond. Check that it is running.'); if (error instanceof TypeError) throw new Error('Could not reach the companion. Check that this page is served by the companion.'); throw error; } finally { window.clearTimeout(timer); }
+      }
+      async function send() {
+        if (sending) return;
+        const input = $('composer'); const rawInput = input.value; const requestMessage = rawInput.trim(); if (!requestMessage) return; if (requestMessage.length > CHAT_LIMITS.maxOutgoingMessageChars) { setMessage('chat-error', 'Messages are limited to 8,000 characters.', 'error'); show($('chat-error'), true); return; } if (!token) { setMessage('chat-error', 'Set a token in Settings before sending chat. Notes remain available offline.', 'error'); show($('chat-error'), true); return; }
+        const requestMode = activeMode(); const requestToken = token; const outgoingHistory = requestHistory(requestMode); sending = true; $('send').disabled = true; show($('chat-error'), false); try { const result = await fetchJson('/chat', { method:'POST', body:JSON.stringify({ message:requestMessage, mode:requestMode, history:outgoingHistory }) }, requestToken); const reply = typeof result.reply === 'string' ? result.reply : ''; if (!reply.trim()) throw new Error('The companion returned no reply. No message was invented.'); history.push({ role:'user', content:requestMessage, mode:requestMode, createdAt:new Date().toISOString() }, { role:'assistant', content:reply, mode:requestMode, createdAt:new Date().toISOString() }); history = history.slice(-MAX_HISTORY); save(); if (input.value === rawInput) input.value = ''; renderHistory(); } catch (error) { setMessage('chat-error', error.message, 'error'); show($('chat-error'), true); } finally { sending = false; $('send').disabled = false; }
+      }
+      async function checkHealth() { setMessage('settings-status', 'Checking companion…', 'success'); show($('settings-status'), true); try { const data = await fetchJson('/health'); setMessage('settings-status', String(data.name || 'Companion') + ' is reachable (v' + String(data.version || '?') + ').', 'success'); } catch (error) { setMessage('settings-status', error.message, 'error'); } }
+      async function prepareAction(action, label) { if (!computerBrowser) { setMessage('action-status', 'Computer companion actions are available only from the Windows companion browser.', 'error'); show($('action-status'), true); return; } if (!token) { setMessage('action-status', 'Pair a token before preparing a computer action.', 'error'); show($('action-status'), true); return; } show($('action-status'), false); try { const data = await fetchJson('/actions/prepare', { method:'POST', body:JSON.stringify({ action }) }); const confirmationId = String(data.confirmation_id || ''); if (!confirmationId) throw new Error('The companion did not provide a confirmation.'); const description = String(data.description || label); const seconds = Number(data.expires_in || 60); if (!window.confirm(description + '\n\nThis one-use confirmation expires in ' + seconds + ' seconds. Continue?')) return; await fetchJson('/actions/confirm', { method:'POST', body:JSON.stringify({ confirmation_id:confirmationId }) }); setMessage('action-status', label + ' launched on the Windows companion.', 'success'); show($('action-status'), true); } catch (error) { setMessage('action-status', error.message, 'error'); show($('action-status'), true); } }
+      function addNote() { const text = window.prompt('Write a local note:'); if (!text || !text.trim()) return; notes.unshift({ id:String(Date.now()), text:text.trim(), createdAt:new Date().toISOString() }); save(); renderNotes(); }
+      function navigate(view) { document.querySelectorAll('[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === view)); document.querySelectorAll('main > section').forEach((section) => section.classList.toggle('hidden', section.id !== 'view-' + view)); }
+      document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => navigate(button.dataset.view)));
+      document.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => setMode(button.dataset.mode)));
+      $('send').addEventListener('click', send); $('composer').addEventListener('keydown', (event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); send(); } });
+      $('new-note').addEventListener('click', addNote); $('clear-notes').addEventListener('click', () => { if (notes.length && window.confirm('Clear every local note from this browser?')) { notes = []; save(); renderNotes(); } }); $('settings-clear-notes').addEventListener('click', () => { if (notes.length && window.confirm('Clear every local note from this browser?')) { notes = []; save(); renderNotes(); } }); $('clear-history').addEventListener('click', () => { if (history.length && window.confirm('Clear chat history from this browser?')) { history = []; save(); renderHistory(); } });
+      $('pair').addEventListener('click', () => { token = $('token').value.trim(); $('token').value = ''; setMessage('settings-status', token ? 'Token set in page memory; it has not been verified.' : 'No token entered; chat stays unavailable.', token ? 'success' : 'error'); show($('settings-status'), true); $('settings-badge').textContent = token ? '● TOKEN SET' : '● DISCONNECTED'; $('settings-badge').className = 'badge offline'; }); $('disconnect').addEventListener('click', () => { token = ''; $('settings-badge').textContent = '● DISCONNECTED'; $('settings-badge').className = 'badge offline'; setMessage('settings-status', 'Token forgotten from page memory.', 'success'); show($('settings-status'), true); }); $('health').addEventListener('click', checkHealth); $('open-calculator').addEventListener('click', () => prepareAction('open_calculator', 'Open Calculator')); $('open-notepad').addEventListener('click', () => prepareAction('open_notepad', 'Open Notepad'));
+      $('setup-pair').addEventListener('click', () => { token = $('setup-token').value.trim(); $('setup-token').value = ''; show($('setup'), false); if (token) { $('settings-badge').textContent = '● TOKEN SET'; $('settings-badge').className = 'badge offline'; } }); $('setup-explore').addEventListener('click', () => show($('setup'), false));
+      const computerBrowser = /Windows/i.test(navigator.userAgent) && !/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+      if (!computerBrowser) { $('open-calculator').disabled = true; $('open-notepad').disabled = true; $('device-note').textContent = 'This is a device or non-Windows browser. Computer companion actions are unavailable here.'; }
+      setMode(mode); renderHistory(); renderNotes();
+    })();
+  </script>
+</body>
+</html>
