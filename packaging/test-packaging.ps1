@@ -142,3 +142,4 @@ try {
 }
 
 Write-Output 'Packaging parser, prerequisite discovery, and native failure-propagation checks passed.'
+exit 0
