@@ -29,6 +29,31 @@ In **Local** mode, these work immediately without Ollama, an API key or internet
 
 The browser Notes screen stores notes locally without a pairing token. Windows Settings actions can open Calculator or Notepad after a separate confirmation. These are fixed buttons, not arbitrary AI-controlled commands.
 
+## Build Windows and Android artifacts
+
+The source tree now includes reproducible PowerShell build scripts. They do not
+download tools or change machine-wide settings:
+
+```powershell
+.\packaging\build-windows.ps1
+.\packaging\build-android.ps1
+```
+
+The Windows build requires Flutter plugin symlink support. Enable Windows
+Developer Mode yourself (or run the build from an approved elevated shell); the
+script will not change that system setting automatically.
+
+The Windows script builds an isolated staging copy and packages the release
+with Inno Setup into `dist\Waste-AI-Setup.exe`, without modifying `client/`.
+The Android script similarly builds an isolated debug APK, ensures Internet and
+microphone permissions are present, and copies it to
+`dist\Waste-android-debug.apk`. It is not production-signed.
+
+Both installed clients still use the local companion flow. The Windows preview
+installer expects Python to be available because the companion is intentionally
+not replaced with an opaque background service. Read `packaging\README.md` for
+the prerequisites and the security boundaries.
+
 ## What is implemented
 
 - Local notes and chat history storage, with clear/delete controls.
@@ -42,10 +67,10 @@ The browser Notes screen stores notes locally without a pairing token. Windows S
 
 ## What is NOT finished or installed
 
-- **No APK or Windows native installer is built yet.** Flutter/Dart and Android SDK were unavailable during the first build. See `client/README.md` for scaffolding and builds.
+- **No APK or Windows native installer artifact is checked in yet.** The build scripts are ready, but Flutter/Dart, Android SDK, and Inno Setup must be installed locally before producing artifacts.
 - **No AI model has been downloaded.** Open-ended offline chat requires Ollama plus a model.
 - **No cloud provider is connected.** Online chat requires an endpoint, model and API key configured on the companion.
-- **No speech recognition, spoken replies or wake word yet.** These are planned, not enabled controls.
+- **Voice interaction is available on supported clients.** Native TTS and push-to-talk speech recognition are explicit, permission-gated controls; no wake-word listener is enabled.
 - **No autonomous file management, web search, cross-device sync or Android on-device AI yet.**
 - Browser interactions and native builds have not been end-to-end UI tested. API, arithmetic and JavaScript routing checks have been run.
 
@@ -70,6 +95,7 @@ Run from this folder:
 ```powershell
 python -m unittest discover -s companion -t . -v
 cscript //nologo client\web-preview\chat_policy_test.js
+cscript //nologo client\web-preview\voice_policy_test.js
 python -m compileall -q companion launch.py
 ```
 

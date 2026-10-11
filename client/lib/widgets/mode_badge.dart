@@ -12,9 +12,9 @@ class ModeBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(.13),
+        color: color.withValues(alpha: .13),
         borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: color.withOpacity(.42)),
+        border: Border.all(color: color.withValues(alpha: .42)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

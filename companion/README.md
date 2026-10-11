@@ -48,6 +48,19 @@ ollama pull qwen2.5:1.5b
 python -m companion.server
 ```
 
+You can verify the local setup without starting the companion listener or
+printing a pairing token:
+
+```powershell
+python -m companion.server --check-ollama
+```
+
+The check has a bounded five-second request. It reports whether Ollama is not
+running, whether the configured model is missing (including the exact
+`ollama pull` guidance), or whether the model is ready. A failed check exits
+with status 1. It contacts only the loopback Ollama model-list endpoint and
+never uses the optional online provider.
+
 Ollama was not available on PATH during the initial project prerequisite
 check, so actual model generation remains unverified until it is installed and
 exercised.

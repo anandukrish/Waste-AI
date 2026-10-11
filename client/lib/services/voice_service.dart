@@ -11,6 +11,60 @@ class VoicePolicy {
     if (runes.length <= maxChars) return text;
     return String.fromCharCodes(runes.take(maxChars));
   }
+
+  static bool containsMalayalam(String text) => text.runes.any(
+        (rune) => rune >= 0x0d00 && rune <= 0x0d7f,
+      );
+
+  /// Selects a platform locale while accepting common `ml`, `ml_IN`, and
+  /// regional variants exposed by different speech engines.
+  static String selectAvailableLocale(
+    Iterable<String> available,
+    String preferred, {
+    String? fallback,
+  }) {
+    final values = available.where((value) => value.trim().isNotEmpty).toList();
+    if (values.isEmpty) return fallback ?? preferred;
+    final candidates = _localeCandidates(preferred);
+    for (final candidate in candidates) {
+      final exact = values.cast<String?>().firstWhere(
+        (value) => _normaliseLocale(value!) == _normaliseLocale(candidate),
+        orElse: () => null,
+      );
+      if (exact != null) return exact;
+      final language = _normaliseLocale(candidate).split('-').first;
+      final family = values.cast<String?>().firstWhere(
+        (value) => _normaliseLocale(value!).split('-').first == language,
+        orElse: () => null,
+      );
+      if (family != null) return family;
+    }
+    return fallback ?? preferred;
+  }
+
+  /// Malayalam script in an otherwise English reply gets a Malayalam-capable
+  /// voice when one is installed; English-only replies retain the preference.
+  static String localeForSpeechText(
+    String text, {
+    required String preferred,
+    required Iterable<String> available,
+    String? fallback,
+  }) => selectAvailableLocale(
+        available,
+        containsMalayalam(text) ? 'ml-IN' : preferred,
+        fallback: fallback,
+      );
+
+  static List<String> _localeCandidates(String preferred) {
+    final normalised = _normaliseLocale(preferred);
+    final candidates = <String>[preferred];
+    if (normalised.startsWith('ml')) candidates.add('ml-IN');
+    if (normalised.startsWith('en')) candidates.add('en-IN');
+    candidates.addAll(['ml-IN', 'en-IN', 'en-US']);
+    return candidates.toSet().toList();
+  }
+
+  static String _normaliseLocale(String value) => value.trim().toLowerCase().replaceAll('_', '-');
 }
 
 class VoiceService {
@@ -26,6 +80,7 @@ class VoiceService {
   bool _listening = false;
   String _language = 'ml-IN';
   String _ttsLanguage = 'ml-IN';
+  List<String> _ttsLanguages = const [];
   String _recognitionLanguage = 'ml-IN';
   double _rate = .5;
   double _volume = 1.0;
@@ -73,15 +128,9 @@ class VoiceService {
   Future<void> _selectAvailableRecognitionLanguage() async {
     try {
       final available = await _speech.locales();
-      final languages = available.map((locale) => locale.localeId.toLowerCase()).toSet();
-      final preferred = <String>[
+      _recognitionLanguage = VoicePolicy.selectAvailableLocale(
+        available.map((locale) => locale.localeId),
         _language,
-        if (_language == 'ml-IN') 'en-IN' else 'ml-IN',
-        'en-US',
-      ];
-      _recognitionLanguage = preferred.firstWhere(
-        (candidate) => languages.contains(candidate.toLowerCase()),
-        orElse: () => _language,
       );
     } catch (_) {
       _recognitionLanguage = _language;
@@ -91,20 +140,16 @@ class VoiceService {
   Future<void> _selectAvailableTtsLanguage() async {
     try {
       final available = await _tts.getLanguages;
-      final languages = available is Iterable
-          ? available.map((value) => value.toString().toLowerCase()).toSet()
-          : <String>{};
-      final preferred = <String>[
+      _ttsLanguages = available is Iterable
+          ? available.map((value) => value.toString()).toList()
+          : const [];
+      _ttsLanguage = VoicePolicy.selectAvailableLocale(
+        _ttsLanguages,
         _language,
-        if (_language == 'ml-IN') 'en-IN' else 'ml-IN',
-        'en-US',
-      ];
-      _ttsLanguage = preferred.firstWhere(
-        (candidate) => languages.isEmpty || languages.contains(candidate.toLowerCase()),
-        orElse: () => _language,
       );
     } catch (_) {
       // A platform can support TTS without exposing its language inventory.
+      _ttsLanguages = const [];
       _ttsLanguage = _language;
     }
   }
@@ -120,7 +165,13 @@ class VoiceService {
     try {
       await _tts.stop();
       await _selectAvailableTtsLanguage();
-      await _tts.setLanguage(_ttsLanguage);
+      final speechLanguage = VoicePolicy.localeForSpeechText(
+        bounded,
+        preferred: _language,
+        available: _ttsLanguages,
+        fallback: _ttsLanguage,
+      );
+      await _tts.setLanguage(speechLanguage);
       await _tts.setSpeechRate(_rate);
       await _tts.setVolume(_volume);
       await _tts.speak(bounded);
@@ -147,8 +198,11 @@ class VoiceService {
     try {
       await _selectAvailableRecognitionLanguage();
       await _speech.listen(
-        onResult: (result) => onResult(result.recognizedWords, result.finalResult),
-        localeId: _recognitionLanguage,
+        onResult: (result) => onResult(
+          VoicePolicy.boundedSpeechText(result.recognizedWords),
+          result.finalResult,
+        ),
+        listenOptions: stt.SpeechListenOptions(localeId: _recognitionLanguage),
       );
       _listening = true;
     } catch (error) {

@@ -210,9 +210,9 @@ class _ChatViewState extends State<ChatView> {
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: mine ? Theme.of(context).colorScheme.primary.withOpacity(.15) : const Color(0xff191c2a),
+                   color: mine ? Theme.of(context).colorScheme.primary.withValues(alpha: .15) : const Color(0xff191c2a),
                   borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: mine ? Theme.of(context).colorScheme.primary.withOpacity(.3) : Colors.white10),
+                   border: Border.all(color: mine ? Theme.of(context).colorScheme.primary.withValues(alpha: .3) : Colors.white10),
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                    Row(children: [Text(mine ? 'YOU' : 'WASTE', style: Theme.of(context).textTheme.labelSmall?.copyWith(letterSpacing: 1, color: mine ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary)), const Spacer(), if (!mine) IconButton(tooltip: 'Speak reply', onPressed: () => _speak(message.content), icon: const Icon(Icons.volume_up_outlined, size: 19)), ModeBadge(mode: message.mode)]),

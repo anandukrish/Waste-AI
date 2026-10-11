@@ -29,10 +29,11 @@ class LocalStore {
       final json = jsonDecode(raw) as Map<String, dynamic>;
       return AppSettings(
         host: json['host'] as String? ?? 'http://127.0.0.1:8765',
-        mode: json['mode'] as String? == 'online' ? 'online' : 'offline',
+        mode: (json['mode'] as String?) == 'online' ? 'online' : 'offline',
         showSetup: json['showSetup'] as bool? ?? true,
         autoSpeak: json['autoSpeak'] as bool? ?? false,
-        voiceLanguage: json['voiceLanguage'] as String? == 'en-IN' ? 'en-IN' : 'ml-IN',
+        voiceLanguage:
+            (json['voiceLanguage'] as String?) == 'en-IN' ? 'en-IN' : 'ml-IN',
         voiceRate: _boundedDouble(json['voiceRate'], .5, .1, 1.0),
         voiceVolume: _boundedDouble(json['voiceVolume'], 1.0, 0.0, 1.0),
       );
@@ -54,7 +55,8 @@ class LocalStore {
         }),
       );
 
-  static double _boundedDouble(dynamic value, double fallback, double min, double max) {
+  static double _boundedDouble(
+      dynamic value, double fallback, double min, double max) {
     final number = value is num ? value.toDouble() : fallback;
     return number.clamp(min, max).toDouble();
   }

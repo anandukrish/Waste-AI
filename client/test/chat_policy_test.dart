@@ -36,7 +36,9 @@ void main() {
       (sum, item) => sum + (item['content'] ?? '').runes.length,
     );
 
-    expect(outgoing, hasLength(30));
+    // The total character bound is reached after three 8,000-character items,
+    // before the 30-item bound is reached.
+    expect(outgoing, hasLength(3));
     expect(
       outgoing.every(
         (item) => (item['content'] ?? '').runes.length <= 8000,

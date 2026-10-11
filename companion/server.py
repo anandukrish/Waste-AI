@@ -32,6 +32,7 @@ from .local_tools import local_reply
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
 OLLAMA_URL = "http://127.0.0.1:11434/api/chat"
+OLLAMA_TAGS_URL = "http://127.0.0.1:11434/api/tags"
 DEFAULT_OFFLINE_MODEL = "qwen2.5:1.5b"
 ACTION_TTL_SECONDS = 60
 MAX_BODY_BYTES = 64 * 1024
@@ -256,6 +257,44 @@ class CompanionApplication:
                     ) from exc
                 raise CompanionError(502, "provider request failed") from exc
             raise CompanionError(502, "provider returned an invalid response") from exc
+
+    def check_offline_model(self) -> tuple[bool, str]:
+        """Check local Ollama and the configured model without contacting online services."""
+
+        model = os.environ.get("WASTE_OFFLINE_MODEL", DEFAULT_OFFLINE_MODEL).strip()
+        if not model or len(model) > 200 or any(ord(char) < 32 for char in model):
+            return False, "Offline model is not configured. Set WASTE_OFFLINE_MODEL to a model name."
+
+        request = urllib.request.Request(
+            OLLAMA_TAGS_URL,
+            headers={"Accept": "application/json"},
+            method="GET",
+        )
+        try:
+            raw = self.provider_transport(request, REQUEST_TIMEOUT_SECONDS)
+        except (ProviderError, OSError, TimeoutError, ValueError):
+            return (
+                False,
+                "Ollama is not reachable at 127.0.0.1:11434. Start Ollama, then run "
+                "this check again.",
+            )
+
+        try:
+            response = json.loads(raw.decode("utf-8"))
+            installed = {
+                item["name"]
+                for item in response["models"]
+                if isinstance(item, dict) and isinstance(item.get("name"), str)
+            }
+        except (KeyError, TypeError, UnicodeDecodeError, json.JSONDecodeError):
+            return False, "Ollama returned an invalid model list; offline setup could not be verified."
+
+        if model not in installed:
+            return (
+                False,
+                f"Offline model '{model}' is not installed. Run: ollama pull {model}",
+            )
+        return True, f"Ollama is ready for offline mode with model '{model}'."
 
     def prepare_action(self, action: str) -> tuple[str, str, int]:
         if action not in ACTION_PATHS:
@@ -587,11 +626,21 @@ def _parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument("--port", default=DEFAULT_PORT, type=int)
     parser.add_argument("--cert", dest="certfile")
     parser.add_argument("--key", dest="keyfile")
+    parser.add_argument(
+        "--check-ollama",
+        action="store_true",
+        help="check local Ollama and the configured offline model, then exit",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: Optional[list[str]] = None) -> int:
     args = _parse_args(argv)
+    if args.check_ollama:
+        # A check-only run must not create a listener or expose a pairing token.
+        ready, message = CompanionApplication(token="check-only").check_offline_model()
+        print(message, flush=True)
+        return 0 if ready else 1
     try:
         server = create_server(
             args.host,

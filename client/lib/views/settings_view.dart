@@ -181,7 +181,7 @@ class _SettingsViewState extends State<SettingsView> {
            const SizedBox(height: 12),
            SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('Auto-speak assistant replies'), value: widget.autoSpeak, onChanged: (value) => _setVoice(autoSpeak: value)),
            const SizedBox(height: 4),
-           DropdownButtonFormField<String>(value: widget.voiceLanguage, decoration: const InputDecoration(labelText: 'Preferred language / locale'), items: const [DropdownMenuItem(value: 'ml-IN', child: Text('Malayalam (ml-IN)')), DropdownMenuItem(value: 'en-IN', child: Text('English India (en-IN)'))], onChanged: (value) { if (value != null) _setVoice(language: value); }),
+            DropdownButtonFormField<String>(initialValue: widget.voiceLanguage, decoration: const InputDecoration(labelText: 'Preferred language / locale'), items: const [DropdownMenuItem(value: 'ml-IN', child: Text('Malayalam (ml-IN)')), DropdownMenuItem(value: 'en-IN', child: Text('English India (en-IN)'))], onChanged: (value) { if (value != null) _setVoice(language: value); }),
            const SizedBox(height: 10),
            Text('Rate ${(widget.voiceRate * 100).round()}%'),
            Slider(value: widget.voiceRate, min: .1, max: 1.0, divisions: 9, label: widget.voiceRate.toStringAsFixed(1), onChanged: (value) => _setVoice(rate: value)),
@@ -200,5 +200,5 @@ class _SettingsViewState extends State<SettingsView> {
 
   Widget _section(BuildContext context, String title, IconData icon, Widget child) => Card(child: Padding(padding: const EdgeInsets.all(18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [Icon(icon, size: 19, color: Theme.of(context).colorScheme.primary), const SizedBox(width: 9), Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700))]), const SizedBox(height: 16), child])));
 
-  Widget _message(String message, bool error) => Container(margin: const EdgeInsets.only(top: 12), padding: const EdgeInsets.all(11), decoration: BoxDecoration(color: (error ? Theme.of(context).colorScheme.errorContainer : Theme.of(context).colorScheme.primaryContainer).withOpacity(.65), borderRadius: BorderRadius.circular(10)), child: Text(message));
+   Widget _message(String message, bool error) => Container(margin: const EdgeInsets.only(top: 12), padding: const EdgeInsets.all(11), decoration: BoxDecoration(color: (error ? Theme.of(context).colorScheme.errorContainer : Theme.of(context).colorScheme.primaryContainer).withValues(alpha: .65), borderRadius: BorderRadius.circular(10)), child: Text(message));
 }

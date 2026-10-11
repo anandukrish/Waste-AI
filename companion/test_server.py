@@ -183,6 +183,49 @@ class CompanionHTTPTests(unittest.TestCase):
         self.assertEqual((status, body), (200, {"reply": "online reply", "mode": "online"}))
         self.assertEqual(self.calls[-1][0], "https://provider.example/v1/chat/completions")
 
+    def test_ollama_check_reports_ready_model_and_stays_local(self):
+        os.environ.update({
+            "WASTE_OFFLINE_MODEL": "qwen2.5:1.5b",
+            "WASTE_ONLINE_BASE_URL": "https://provider.example/v1",
+            "WASTE_ONLINE_MODEL": "online-model",
+            "WASTE_ONLINE_API_KEY": "secret-key",
+        })
+
+        def local_tags(request, timeout):
+            self.calls.append((request.full_url, {}, timeout))
+            return b'{"models":[{"name":"qwen2.5:1.5b"}]}'
+
+        self.app.provider_transport = local_tags
+        ready, message = self.app.check_offline_model()
+        self.assertTrue(ready)
+        self.assertIn("ready for offline mode", message)
+        self.assertEqual(self.calls, [(server.OLLAMA_TAGS_URL, {}, server.REQUEST_TIMEOUT_SECONDS)])
+
+    def test_ollama_check_reports_unreachable_and_missing_model(self):
+        self.app.provider_transport = mock.Mock(side_effect=server.ProviderError("connection details"))
+        ready, message = self.app.check_offline_model()
+        self.assertFalse(ready)
+        self.assertIn("Ollama is not reachable", message)
+        self.assertNotIn("connection details", message)
+
+        self.app.provider_transport = lambda request, timeout: b'{"models":[{"name":"other-model"}]}'
+        ready, message = self.app.check_offline_model()
+        self.assertFalse(ready)
+        self.assertIn("qwen2.5:1.5b", message)
+        self.assertIn("ollama pull qwen2.5:1.5b", message)
+
+    def test_check_ollama_cli_reports_failure_without_starting_server(self):
+        with mock.patch.object(
+            server.CompanionApplication,
+            "check_offline_model",
+            return_value=(False, "Ollama is not reachable"),
+        ):
+            with mock.patch.object(server.CompanionApplication, "__init__", return_value=None) as init:
+                with mock.patch("builtins.print") as print_message:
+                    self.assertEqual(server.main(["--check-ollama"]), 1)
+        init.assert_called_once_with(token="check-only")
+        print_message.assert_called_once_with("Ollama is not reachable", flush=True)
+
     def test_online_missing_config_and_provider_error_are_safe(self):
         status, body = self.request("POST", "/api/chat", payload={"message": "hello", "mode": "online", "history": []})
         self.assertEqual(status, 503)

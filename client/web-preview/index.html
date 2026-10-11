@@ -123,7 +123,40 @@
        const VOICE_KEY = 'waste.web.voice';
        const MAX_HISTORY = 40;
        const CHAT_LIMITS = { maxOutgoingHistoryItems: 30, maxOutgoingHistoryChars: 24000, maxOutgoingItemChars: 8000, maxOutgoingMessageChars: 8000 };
-       const VOICE_LIMIT = 8000;
+       const VOICE_POLICY = (() => {
+         const normalizeLocale = (value) => String(value || '').trim().toLowerCase().replace(/_/g, '-');
+         const localeCandidates = (language) => {
+           const normalized = normalizeLocale(language);
+           const candidates = [language];
+           if (normalized.startsWith('ml')) candidates.push('ml-IN');
+           if (normalized.startsWith('en')) candidates.push('en-IN');
+           candidates.push('ml-IN', 'en-IN', 'en-US');
+           return [...new Set(candidates)];
+         };
+         const containsMalayalam = (text) => Array.from(String(text || '')).some((character) => {
+           const code = character.codePointAt(0);
+           return code >= 0x0d00 && code <= 0x0d7f;
+         });
+         const selectAvailableLocale = (available, preferred, fallback) => {
+           const values = (available || []).map((value) => String(value || '').trim()).filter(Boolean);
+           if (!values.length) return fallback || preferred;
+           for (const candidate of localeCandidates(preferred)) {
+             const exact = values.find((value) => normalizeLocale(value) === normalizeLocale(candidate));
+             if (exact) return exact;
+             const language = normalizeLocale(candidate).split('-')[0];
+             const family = values.find((value) => normalizeLocale(value).split('-')[0] === language);
+             if (family) return family;
+           }
+           return fallback || preferred;
+         };
+         const speechLocale = (text, preferred, available, fallback) => selectAvailableLocale(available, containsMalayalam(text) ? 'ml-IN' : preferred, fallback);
+         const preferredVoice = (voices, language, text) => {
+           const wantedLanguage = speechLocale(text, language, voices.map((voice) => voice.lang), language);
+           return voices.find((voice) => normalizeLocale(voice.lang) === normalizeLocale(wantedLanguage)) || voices.find((voice) => normalizeLocale(voice.lang).split('-')[0] === normalizeLocale(wantedLanguage).split('-')[0]) || voices[0] || null;
+         };
+         return { maxSpeechChars: 8000, boundedSpeechText: (text, limit = 8000) => limit <= 0 ? '' : Array.from(String(text || '')).slice(0, limit).join(''), containsMalayalam, selectAvailableLocale, speechLocale, preferredVoice };
+       })();
+       const VOICE_LIMIT = VOICE_POLICY.maxSpeechChars;
        let token = '';
       let mode = 'offline';
       let history = readList(HISTORY_KEY).slice(-MAX_HISTORY);
@@ -139,13 +172,13 @@
        function readList(key) { try { const parsed = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(parsed) ? parsed : []; } catch (_) { return []; } }
        function readVoiceSettings() { try { const raw = JSON.parse(localStorage.getItem(VOICE_KEY) || '{}'); const rate = typeof raw.rate === 'number' ? raw.rate : .5; const volume = typeof raw.volume === 'number' ? raw.volume : 1; return { autoSpeak: raw.autoSpeak === true, language: raw.language === 'en-IN' ? 'en-IN' : 'ml-IN', voiceName: typeof raw.voiceName === 'string' ? raw.voiceName : '', rate: Math.max(.1, Math.min(1, rate)), volume: Math.max(0, Math.min(1, volume)) }; } catch (_) { return { autoSpeak:false, language:'ml-IN', voiceName:'', rate:.5, volume:1 }; } }
        function saveVoiceSettings() { localStorage.setItem(VOICE_KEY, JSON.stringify(voiceSettings)); }
-       function boundedSpeechText(text) { return Array.from(String(text || '')).slice(0, VOICE_LIMIT).join(''); }
+        function boundedSpeechText(text) { return VOICE_POLICY.boundedSpeechText(text, VOICE_LIMIT); }
        function voiceSupported() { return 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function'; }
        function setVoiceStatus(message, kind) { if (!message) { show($('voice-status'), false); return; } setMessage('voice-status', message, kind || 'success'); show($('voice-status'), true); }
-       function refreshDeviceVoices() { if (!voiceSupported()) return; deviceVoices = window.speechSynthesis.getVoices() || []; const select = $('voice-selector'); select.replaceChildren(); if (!deviceVoices.length) { const option = document.createElement('option'); option.value = ''; option.textContent = 'Browser default (no list exposed)'; select.append(option); return; } deviceVoices.forEach((voice) => { const option = document.createElement('option'); option.value = voice.name; option.textContent = voice.name + ' · ' + voice.lang; select.append(option); }); const requested = voiceSettings.language.toLowerCase(); const fallback = requested === 'ml-in' ? 'en-in' : 'ml-in'; const preferred = deviceVoices.find((voice) => String(voice.lang).toLowerCase() === requested) || deviceVoices.find((voice) => String(voice.lang).toLowerCase() === fallback) || deviceVoices[0]; if (!voiceSettings.voiceName || !deviceVoices.some((voice) => voice.name === voiceSettings.voiceName)) voiceSettings.voiceName = preferred ? preferred.name : ''; select.value = voiceSettings.voiceName; saveVoiceSettings(); }
-       function speakText(text) { if (!voiceSupported()) { setVoiceStatus('Text-to-speech is unavailable in this browser or device.', 'error'); return; } const bounded = boundedSpeechText(text); if (!bounded.trim()) return; try { window.speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(bounded); utterance.lang = voiceSettings.language; utterance.rate = voiceSettings.rate; utterance.volume = voiceSettings.volume; const selected = deviceVoices.find((voice) => voice.name === voiceSettings.voiceName); if (selected) utterance.voice = selected; utterance.onerror = () => setVoiceStatus('The browser could not speak this reply.', 'error'); window.speechSynthesis.speak(utterance); } catch (_) { setVoiceStatus('The browser could not start text-to-speech.', 'error'); } }
+        function refreshDeviceVoices() { if (!voiceSupported()) return; deviceVoices = window.speechSynthesis.getVoices() || []; const select = $('voice-selector'); select.replaceChildren(); if (!deviceVoices.length) { const option = document.createElement('option'); option.value = ''; option.textContent = 'Browser default (no list exposed)'; select.append(option); return; } deviceVoices.forEach((voice) => { const option = document.createElement('option'); option.value = voice.name; option.textContent = voice.name + ' · ' + voice.lang; select.append(option); }); const preferred = VOICE_POLICY.preferredVoice(deviceVoices, voiceSettings.language); if (!voiceSettings.voiceName || !deviceVoices.some((voice) => voice.name === voiceSettings.voiceName)) voiceSettings.voiceName = preferred ? preferred.name : ''; select.value = voiceSettings.voiceName; saveVoiceSettings(); }
+        function speakText(text) { if (!voiceSupported()) { setVoiceStatus('Text-to-speech is unavailable in this browser or device.', 'error'); return; } const bounded = boundedSpeechText(text); if (!bounded.trim()) return; try { window.speechSynthesis.cancel(); const preferred = VOICE_POLICY.preferredVoice(deviceVoices, voiceSettings.language, bounded); const saved = deviceVoices.find((voice) => voice.name === voiceSettings.voiceName); const selected = VOICE_POLICY.containsMalayalam(bounded) ? preferred : (saved || preferred); const utterance = new SpeechSynthesisUtterance(bounded); utterance.lang = selected ? selected.lang : VOICE_POLICY.speechLocale(bounded, voiceSettings.language, deviceVoices.map((voice) => voice.lang), voiceSettings.language); utterance.rate = voiceSettings.rate; utterance.volume = voiceSettings.volume; if (selected) utterance.voice = selected; utterance.onerror = () => setVoiceStatus('The browser could not speak this reply.', 'error'); window.speechSynthesis.speak(utterance); } catch (_) { setVoiceStatus('The browser could not start text-to-speech.', 'error'); } }
        function stopSpeaking() { if (!voiceSupported()) { setVoiceStatus('Text-to-speech is unavailable in this browser or device.', 'error'); return; } try { window.speechSynthesis.cancel(); } catch (_) { setVoiceStatus('The browser could not stop text-to-speech.', 'error'); } }
-       function setupRecognition() { const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition; if (!Recognition) return; recognition = new Recognition(); recognition.lang = voiceSettings.language; recognition.interimResults = true; recognition.continuous = false; recognition.onresult = (event) => { let transcript = ''; for (let index = event.resultIndex; index < event.results.length; index += 1) transcript += event.results[index][0].transcript; $('composer').value = transcript; }; recognition.onerror = (event) => { setVoiceStatus(event.error === 'not-allowed' ? 'Microphone permission was denied. Enable it in the browser to use push-to-talk.' : 'Speech recognition failed: ' + String(event.error || 'unknown error') + '.', 'error'); $('mic').dataset.listening = 'false'; $('mic').textContent = '♩ Mic'; }; recognition.onend = () => { $('mic').dataset.listening = 'false'; $('mic').textContent = '♩ Mic'; }; }
+        function setupRecognition() { const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition; if (!Recognition) return; recognition = new Recognition(); recognition.lang = voiceSettings.language; recognition.interimResults = true; recognition.continuous = false; recognition.onresult = (event) => { let transcript = ''; for (let index = event.resultIndex; index < event.results.length; index += 1) transcript += event.results[index][0].transcript; $('composer').value = boundedSpeechText(transcript); }; recognition.onerror = (event) => { setVoiceStatus(event.error === 'not-allowed' ? 'Microphone permission was denied. Enable it in the browser to use push-to-talk.' : 'Speech recognition failed: ' + String(event.error || 'unknown error') + '.', 'error'); $('mic').dataset.listening = 'false'; $('mic').textContent = '♩ Mic'; }; recognition.onend = () => { $('mic').dataset.listening = 'false'; $('mic').textContent = '♩ Mic'; }; }
        function toggleRecognition() { if (!recognition) { setVoiceStatus('Push-to-talk is unsupported in this browser. Use the keyboard composer instead.', 'error'); return; } if ($('mic').dataset.listening === 'true') { recognition.stop(); $('mic').dataset.listening = 'false'; $('mic').textContent = '♩ Mic'; return; } recognition.lang = voiceSettings.language; try { recognition.start(); $('mic').dataset.listening = 'true'; $('mic').textContent = '■ Stop'; setVoiceStatus('Listening… speak now. Nothing will be sent automatically.', 'success'); } catch (_) { setVoiceStatus('Could not start the microphone. Check browser permission and try again.', 'error'); } }
       function save() { localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-MAX_HISTORY))); }
       function activeMode() { return mode; }
