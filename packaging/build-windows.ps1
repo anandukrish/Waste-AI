@@ -44,8 +44,11 @@ if (-not $flutter) {
 }
 
 $isccCandidates = @(
-    (Get-Command iscc -CommandType Application -ErrorAction SilentlyContinue).Source,
-    'C:\Program Files (x86)\Inno Setup 6\ISCC.exe',
+    Get-Command iscc -CommandType Application -ErrorAction SilentlyContinue | ForEach-Object { $_.Source }
+    if ($env:LOCALAPPDATA) {
+        Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe'
+    }
+    'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
     'C:\Program Files\Inno Setup 6\ISCC.exe'
 ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) }
 $isccCandidates = @($isccCandidates)

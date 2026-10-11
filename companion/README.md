@@ -2,7 +2,8 @@
 
 This is the Windows companion gateway for Waste. It uses only Python's
 standard library and serves the browser preview at `/` when the preview file
-exists. Notes and conversation history remain in the client.
+exists. Notes, voice preferences, and conversation history remain in the
+client; the companion does not persist them.
 
 ## Start locally
 
@@ -55,15 +56,15 @@ printing a pairing token:
 python -m companion.server --check-ollama
 ```
 
-The check has a bounded five-second request. It reports whether Ollama is not
-running, whether the configured model is missing (including the exact
-`ollama pull` guidance), or whether the model is ready. A failed check exits
-with status 1. It contacts only the loopback Ollama model-list endpoint and
-never uses the optional online provider.
+The check has a bounded five-second request and does not create a listener or
+print a pairing token. It reports whether Ollama is not running, whether the
+configured model is missing (including the exact `ollama pull` guidance), or
+whether the model is ready. A failed check exits with status 1. It contacts
+only the loopback Ollama model-list endpoint and never uses the optional online
+provider.
 
-Ollama was not available on PATH during the initial project prerequisite
-check, so actual model generation remains unverified until it is installed and
-exercised.
+Ollama was not available on `PATH` during the documentation audit, so actual
+model generation remains unverified until it is installed and exercised.
 
 Online mode is disabled unless all three settings are present. The base URL
 must be HTTPS and end exactly in `/v1`:
@@ -94,10 +95,34 @@ short-lived, one-use confirmation from `/api/actions/confirm` starts the fixed
 Windows executable. Arbitrary paths, commands, and shell execution are not
 accepted.
 
+## Voice and privacy boundaries
+
+Voice is implemented by the client, not by this gateway. Native Flutter uses
+the device's TTS and speech-recognition plugins; the browser preview uses
+browser-native speech APIs. Malayalam (`ml-IN`) is the default preference and
+English India (`en-IN`) is selectable. Support and permission behavior are
+platform/browser dependent. There is no wake-word listener, and the client
+does not persist microphone audio or recognized transcripts. Push-to-talk puts
+recognized text in the composer and never sends it automatically.
+
+Offline chat remains on the local path: built-in commands need no model, and
+open-ended offline chat is sent only to Ollama on `127.0.0.1`. The companion
+does not silently fall back online. Online requests are made only when the
+client explicitly selects online mode and all HTTPS `/v1`, model, and key
+settings are configured. The key is read from the process environment and is
+not logged, stored in chat history, or returned in errors. The browser's notes,
+history, and voice preferences are ordinary browser `localStorage`; its token
+is memory-only. The native token uses secure storage.
+
 ## Checks
 
 Run the standard-library unittest suite from `Waste`:
 
 ```powershell
 python -m unittest companion.test_server -v
+python -m compileall -q companion launch.py
 ```
+
+The current checkout has no downloaded Ollama model. Native Flutter clients,
+an Android APK, and a Windows installer are not produced by this module; use
+the scripts under `packaging/` after installing their prerequisites.

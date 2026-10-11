@@ -31,23 +31,36 @@ The browser Notes screen stores notes locally without a pairing token. Windows S
 
 ## Build Windows and Android artifacts
 
-The source tree now includes reproducible PowerShell build scripts. They do not
-download tools or change machine-wide settings:
+The source tree includes PowerShell build scripts for producing local artifacts.
+They do not download tools, change machine-wide settings, or imply that an
+artifact is already present. They stage a copy of `client/`, so generated
+platform files and build output do not overwrite the checked-in client source:
 
 ```powershell
 .\packaging\build-windows.ps1
 .\packaging\build-android.ps1
 ```
 
-The Windows build requires Flutter plugin symlink support. Enable Windows
-Developer Mode yourself (or run the build from an approved elevated shell); the
-script will not change that system setting automatically.
+Before building, install Flutter and make `flutter` available on `PATH`. The
+Windows toolchain also needs Visual Studio's Desktop development with C++
+workload and a Windows SDK. Flutter plugin builds may need Windows Developer
+Mode (or an approved elevated shell) for symlinks; the script will not change
+that system setting automatically. Android builds need a configured Android
+SDK/toolchain with accepted licenses and a valid device or emulator. Windows
+packaging additionally needs Inno Setup 6 (`ISCC.exe`) and both build paths
+need Python 3 for the companion launcher included with the installer.
 
-The Windows script builds an isolated staging copy and packages the release
-with Inno Setup into `dist\Waste-AI-Setup.exe`, without modifying `client/`.
-The Android script similarly builds an isolated debug APK, ensures Internet and
-microphone permissions are present, and copies it to
-`dist\Waste-android-debug.apk`. It is not production-signed.
+The Windows script is intended to build an isolated native release and package
+it with Inno Setup as `dist\Waste-AI-Setup.exe`, without modifying `client/`.
+That installer contains the native `waste.exe` and a separate companion-browser
+launcher. The Android script is intended to build an isolated debug APK,
+ensures Internet and microphone permissions are present, and copies it to
+`dist\Waste-android-debug.apk`. It is not production-signed. These are expected
+outputs after a successful local build, not checked-in artifacts. The Android
+debug APK was built and independently verified locally in the current
+development session. The Windows installer remains unbuilt because Flutter
+requires Windows Developer Mode (or an approved elevated build shell) for
+plugin symlinks.
 
 Both installed clients still use the local companion flow. The Windows preview
 installer expects Python to be available because the companion is intentionally
@@ -67,18 +80,51 @@ the prerequisites and the security boundaries.
 
 ## What is NOT finished or installed
 
-- **No APK or Windows native installer artifact is checked in yet.** The build scripts are ready, but Flutter/Dart, Android SDK, and Inno Setup must be installed locally before producing artifacts.
+- **No Windows native installer artifact is checked in or verified.** The Windows build script is ready, but Flutter plugin symlink support requires Windows Developer Mode or an approved elevated shell.
+- **Android debug APK:** built and verified locally as `dist\Waste-android-debug.apk`; it is a development artifact signed with the standard Android debug key, not a production release.
 - **No AI model has been downloaded.** Open-ended offline chat requires Ollama plus a model.
 - **No cloud provider is connected.** Online chat requires an endpoint, model and API key configured on the companion.
-- **Voice interaction is available on supported clients.** Native TTS and push-to-talk speech recognition are explicit, permission-gated controls; no wake-word listener is enabled.
+- **Voice interaction is available when the client platform exposes it.** Flutter uses native TTS and speech-recognition plugins, while the browser preview uses browser-native speech APIs. Malayalam (`ml-IN`) is preferred, with English India (`en-IN`) selectable. Voice is explicit push-to-talk/speak or auto-speak; no wake-word listener is enabled. Availability, permissions, and speech processing remain controlled by the OS/browser.
 - **No autonomous file management, web search, cross-device sync or Android on-device AI yet.**
-- Browser interactions and native builds have not been end-to-end UI tested. API, arithmetic and JavaScript routing checks have been run.
+- Browser interactions and native builds have not been end-to-end UI tested. API, arithmetic, JavaScript policy, Python compile, Flutter analysis/tests, Android APK metadata, and packaging failure-propagation checks are available; Windows installer and real device checks remain pending.
+
+## Privacy and data boundaries
+
+- Local mode is explicit. Built-in commands run without a model; open-ended
+  offline requests use only Ollama at `127.0.0.1:11434`. Offline mode never
+  falls back to the online provider, and only history from the selected mode is
+  sent with a request.
+- Notes, chat history, and ordinary settings stay on the client. The native
+  client uses app preferences and secure storage for the pairing token. The
+  browser preview keeps the token in page memory but stores notes, history, and
+  voice preferences in that browser's plain `localStorage`; treat browser
+  profile access as access to that data.
+- The companion does not persist notes or chat history. An online API key is
+  read from the companion process environment only and is not returned in
+  responses or startup output. Voice input/output is handled by native or
+  browser facilities; WASTE does not store microphone audio or transcripts,
+  and recognized text is placed in the composer without automatic sending.
+- The companion binds to loopback by default. Cross-device use requires a
+  concrete address with HTTPS and a trusted certificate; do not use public
+  port forwarding.
 
 ## Add offline AI later
 
 Install Ollama separately, then download the default small model using `ollama pull qwen2.5:1.5b`. This is an additional download, not something this project has done. Model license and system suitability should be reviewed before use. Your 8 GB RAM PC should start with a small model and measured performance.
 
-Start Ollama before Waste. Waste talks only to `http://127.0.0.1:11434/api/chat` in local model mode; environment proxies are disabled for this transport. Cold-start model requests are bounded at 90 seconds.
+Start Ollama before Waste. To check setup without starting Waste or printing a
+pairing token, run:
+
+```powershell
+python -m companion.server --check-ollama
+```
+
+The check contacts only Ollama's loopback model-list endpoint, has a bounded
+five-second request, reports whether Ollama is unreachable or the configured
+model is missing, and exits with status 1 when not ready. Waste talks only to
+`http://127.0.0.1:11434/api/chat` in local model mode; environment proxies are
+disabled for this transport. Cold-start model requests are bounded at 90
+seconds.
 
 For another local model set `WASTE_OFFLINE_MODEL` in your terminal before starting Waste. See `companion/README.md` for online configuration. Never commit API keys or put them into client source.
 
@@ -97,9 +143,10 @@ python -m unittest discover -s companion -t . -v
 cscript //nologo client\web-preview\chat_policy_test.js
 cscript //nologo client\web-preview\voice_policy_test.js
 python -m compileall -q companion launch.py
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File packaging\test-packaging.ps1
 ```
 
-Native checks pending prerequisite installation: `flutter pub get`, `flutter analyze`, `flutter test`, `flutter build windows`, and `flutter build apk` from the scaffolded client directory. Do not treat them as passed.
+Native checks pending prerequisite installation: `flutter pub get`, `flutter analyze`, `flutter test`, `flutter build windows`, and `flutter build apk` from the scaffolded client directory. Do not treat them as passed. The current source checkout has no generated Flutter platform directories and no APK/EXE output.
 
 ## Storage and removal
 
