@@ -67,6 +67,18 @@ installer expects Python to be available because the companion is intentionally
 not replaced with an opaque background service. Read `packaging\README.md` for
 the prerequisites and the security boundaries.
 
+## Preview download
+
+The verified Android development build is available from the
+[v0.1.0-preview GitHub release](https://github.com/anandukrish/Waste-AI/releases/tag/v0.1.0-preview).
+`Waste-android-debug.apk` is debug-signed for development/device testing; it is
+not a production release and should only be installed when you trust the
+download source. SHA-256:
+
+```text
+AF614F63AC0D2EAF4395D8DEE503F78F6CD1C174D10EDC45DE26D896B4700501
+```
+
 ## What is implemented
 
 - Local notes and chat history storage, with clear/delete controls.
