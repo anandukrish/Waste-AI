@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b12">
+  <title>Venom Antivirus · local inspection dashboard</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090b12;
+      --bg-raised: #0e111a;
+      --panel: #121722;
+      --panel-strong: #171e2d;
+      --line: #263044;
+      --line-soft: #1c2535;
+      --text: #f2f5fb;
+      --muted: #8d9ab0;
+      --faint: #5f6c80;
+      --mint: #73f0be;
+      --mint-deep: #32b987;
+      --violet: #a992ff;
+      --blue: #7ab8ff;
+      --amber: #f7c96e;
+      --red: #ff899b;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .28);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      color: var(--text);
+      background: radial-gradient(circle at 72% -12%, #243254 0, transparent 31%), radial-gradient(circle at 5% 92%, #123128 0, transparent 28%), var(--bg);
+      font: 14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .48; }
+    .shell { display: flex; min-height: 100vh; }
+    .rail { width: 252px; padding: 26px 17px; border-right: 1px solid var(--line-soft); background: rgba(11, 14, 22, .78); backdrop-filter: blur(18px); }
+    .brand { display: flex; align-items: center; gap: 12px; margin: 0 12px 42px; }
+    .brand-mark { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid #73f0be66; border-radius: 13px; color: #06150f; background: linear-gradient(135deg, var(--mint), var(--violet)); box-shadow: 0 0 28px #73f0be20; font-size: 21px; font-weight: 900; }
+    .brand-name { font-size: 17px; font-weight: 850; letter-spacing: 2px; }
+    .brand-sub { margin-top: -2px; color: var(--faint); font-size: 10px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; }
+    nav { display: grid; gap: 7px; }
+    .nav-item { width: 100%; padding: 12px 14px; border: 1px solid transparent; border-radius: 12px; color: var(--muted); background: transparent; text-align: left; transition: .2s ease; }
+    .nav-item:hover, .nav-item.active { border-color: var(--line); color: var(--text); background: var(--panel-strong); }
+    .nav-item.active { box-shadow: inset 3px 0 var(--mint); }
+    .nav-icon { display: inline-block; width: 22px; color: var(--mint); font-size: 16px; text-align: center; }
+    .rail-note { margin: 150px 8px 0; padding: 14px; border: 1px solid #2a3b42; border-radius: 14px; background: #0d191c; }
+    .rail-note strong { display: block; margin-bottom: 5px; color: var(--mint); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+    .rail-note p { color: var(--muted); font-size: 11px; }
+    .main { width: min(1220px, 100%); margin: 0 auto; padding: 38px clamp(20px, 5vw, 70px) 52px; }
+    .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 27px; }
+    .eyebrow { margin-bottom: 8px; color: var(--mint); font-size: 11px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 6px; font-size: clamp(28px, 4vw, 42px); line-height: 1.08; letter-spacing: -1.5px; }
+    h2 { margin-bottom: 4px; font-size: 19px; letter-spacing: -.35px; }
+    h3 { margin-bottom: 4px; font-size: 14px; }
+    p { margin-bottom: 0; color: var(--muted); }
+    .status-pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border: 1px solid #73f0be50; border-radius: 99px; color: var(--mint); background: #73f0be0d; font-size: 10px; font-weight: 850; letter-spacing: 1px; white-space: nowrap; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px #73f0be18; }
+    .card { margin-bottom: 16px; padding: 21px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(145deg, rgba(20, 26, 39, .96), rgba(14, 18, 28, .96)); box-shadow: var(--shadow); }
+    .hero { position: relative; overflow: hidden; padding: 29px; border-color: #5cae9c45; background: radial-gradient(circle at 87% 25%, #73f0be19, transparent 30%), radial-gradient(circle at 95% 100%, #a992ff12, transparent 31%), linear-gradient(135deg, #132722, #111722 67%); }
+    .hero::after { position: absolute; right: 35px; bottom: -51px; color: #73f0be10; content: '⌁'; font-size: 230px; font-weight: 100; line-height: 1; transform: rotate(-17deg); }
+    .hero-copy { position: relative; z-index: 1; max-width: 720px; }
+    .hero h2 { margin-bottom: 10px; font-size: clamp(22px, 3vw, 30px); }
+    .hero p { max-width: 650px; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .button { padding: 11px 15px; border: 1px solid transparent; border-radius: 11px; font-weight: 800; transition: transform .16s ease, border-color .16s ease; }
+    .button:hover:not(:disabled) { transform: translateY(-1px); }
+    .button.primary { color: #06160f; background: var(--mint); box-shadow: 0 8px 24px #73f0be1c; }
+    .button.secondary { border-color: var(--line); color: var(--text); background: var(--panel-strong); }
+    .button.ai { border-color: #a992ff55; color: #e7ddff; background: #a992ff16; }
+    .button.ghost { padding: 7px 9px; border-color: transparent; color: var(--muted); background: transparent; }
+    .notice { display: flex; align-items: flex-start; gap: 10px; margin-top: 17px; padding: 12px 14px; border-left: 3px solid var(--violet); color: #c9c1e8; background: #a992ff0d; font-size: 12px; }
+    .notice strong { color: var(--text); }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    .metric { padding: 17px; border: 1px solid var(--line); border-radius: 15px; background: #111722; }
+    .metric-label { color: var(--muted); font-size: 12px; }
+    .metric strong { display: block; margin: 5px 0 2px; font-size: 27px; letter-spacing: -.8px; }
+    .metric small { color: var(--faint); font-size: 11px; }
+    .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, .7fr); gap: 16px; }
+    .section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 16px; }
+    .section-head p { font-size: 12px; }
+    .selected-list, .result-list, .history-list { display: grid; gap: 9px; }
+    .selected-empty, .empty { padding: 26px 15px; border: 1px dashed #344157; border-radius: 13px; color: var(--muted); text-align: center; }
+    .selected-row, .result-row, .history-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 11px; align-items: center; padding: 11px; border: 1px solid var(--line-soft); border-radius: 12px; background: #0f141f; }
+    .file-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: var(--blue); background: #7ab8ff13; font-weight: 800; }
+    .row-name { overflow: hidden; color: var(--text); font-size: 13px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+    .row-meta { overflow: hidden; margin-top: 2px; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .row-remove { border: 0; color: var(--faint); background: transparent; }
+    .row-remove:hover { color: var(--red); }
+    .risk { display: inline-flex; padding: 5px 8px; border: 1px solid; border-radius: 99px; font-size: 10px; font-weight: 850; letter-spacing: .5px; white-space: nowrap; }
+    .risk.low { border-color: #73f0be55; color: var(--mint); background: #73f0be10; }
+    .risk.medium { border-color: #f7c96e55; color: var(--amber); background: #f7c96e10; }
+    .risk.high { border-color: #ff899b55; color: var(--red); background: #ff899b10; }
+    .progress-wrap { display: flex; align-items: center; gap: 11px; margin-top: 16px; color: var(--muted); font-size: 11px; }
+    .progress-track { flex: 1; height: 7px; overflow: hidden; border-radius: 99px; background: #273145; }
+    .progress-bar { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--mint-deep), var(--mint), var(--violet)); transition: width .25s ease; }
+    .queue-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .engine-list { display: grid; gap: 1px; }
+    .engine-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line-soft); }
+    .engine-row:last-child { border-bottom: 0; }
+    .engine-row strong { display: block; margin-bottom: 2px; font-size: 13px; }
+    .engine-row span { color: var(--muted); font-size: 11px; }
+    .engine-state { color: var(--amber) !important; font-size: 10px !important; font-weight: 850; letter-spacing: .7px; text-transform: uppercase; }
+    .engine-state.ready { color: var(--mint) !important; }
+    .review-box { margin-top: 16px; padding: 15px; border: 1px solid #a992ff3d; border-radius: 13px; background: #a992ff0b; }
+    .review-box p { margin-bottom: 11px; font-size: 12px; }
+    .check { display: flex; align-items: flex-start; gap: 8px; color: var(--muted); font-size: 11px; }
+    .check input { margin-top: 3px; accent-color: var(--violet); }
+    .review-box .button { margin-top: 12px; }
+    .defender-box { border-color: #73f0be3d; background: #73f0be08; }
+    .defender-path { width: 100%; margin-top: 9px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 10px; color: var(--text); background: #0c111b; outline: none; }
+    .defender-path:focus { border-color: var(--mint); box-shadow: 0 0 0 3px #73f0be16; }
+    .engine-check { margin: 8px 0 0; color: var(--muted); font-size: 11px; }
+    .hash { color: var(--faint); font: 10px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace; word-break: break-all; }
+    .finding { margin-top: 7px; color: var(--muted); font-size: 11px; }
+    .finding.eicar { color: var(--red); font-weight: 750; }
+    .alert { display: none; margin: 12px 0 0; padding: 11px 13px; border-radius: 11px; font-size: 12px; }
+    .alert.show { display: block; }
+    .alert.error { border: 1px solid #ff899b55; color: #ffd8de; background: #ff899b0c; }
+    .alert.success { border: 1px solid #73f0be55; color: #d2ffef; background: #73f0be0d; }
+    .history-page .card { max-width: 980px; }
+    .history-row { grid-template-columns: 34px minmax(0, 1fr) auto; }
+    .about-copy { max-width: 780px; }
+    .about-copy p { margin: 0 0 15px; }
+    .about-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; }
+    .about-tile { padding: 16px; border: 1px solid var(--line); border-radius: 13px; background: #111722; }
+    .about-tile strong { display: block; margin-bottom: 5px; }
+    .about-tile p { font-size: 12px; }
+    .hidden { display: none !important; }
+    @media (max-width: 880px) {
+      .rail { width: 210px; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .rail-note { margin-top: 70px; }
+    }
+    @media (max-width: 620px) {
+      .shell { display: block; }
+      .rail { display: flex; align-items: center; width: 100%; padding: 12px 14px; border-right: 0; border-bottom: 1px solid var(--line-soft); }
+      .brand { margin: 0 17px 0 0; }
+      .brand-mark { width: 32px; height: 32px; border-radius: 10px; font-size: 17px; }
+      .brand-sub { display: none; }
+      nav { display: flex; flex: 1; gap: 3px; }
+      .nav-item { padding: 9px 5px; text-align: center; font-size: 11px; }
+      .nav-icon { display: block; width: auto; font-size: 14px; }
+      .rail-note { display: none; }
+      .main { padding: 25px 14px 38px; }
+      .topbar { display: block; }
+      .topbar .status-pill { margin-top: 14px; }
+      .hero { padding: 22px; }
+      .metrics, .about-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .metric { padding: 13px; }
+      .metric strong { font-size: 22px; }
+      .card { padding: 16px; }
+      .selected-row, .result-row, .history-row { grid-template-columns: 32px minmax(0, 1fr); }
+      .selected-row .row-remove, .result-row .risk, .history-row .risk { grid-column: 2; justify-self: start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <div class="brand"><span class="brand-mark">⌁</span><div><div class="brand-name">VENOM</div><div class="brand-sub">antivirus triage</div></div></div>
+      <nav aria-label="Primary navigation">
+        <button class="nav-item active" data-view="dashboard"><span class="nav-icon">◈</span> Dashboard</button>
+        <button class="nav-item" data-view="history"><span class="nav-icon">◷</span> Scan history</button>
+        <button class="nav-item" data-view="about"><span class="nav-icon">◌</span> About layer</button>
+      </nav>
+      <div class="rail-note"><strong><span class="status-dot"></span> Local boundary</strong><p>Files stay in this browser unless you explicitly choose AI Review.</p></div>
+    </aside>
+
+    <main class="main">
+      <section id="view-dashboard">
+        <header class="topbar"><div><div class="eyebrow">Venom / inspection console</div><h1>Know what you’re opening.</h1><p>Local hashing and transparent heuristics for a focused first look.</p></div><span class="status-pill"><span class="status-dot"></span> LOCAL ONLY</span></header>
+
+        <section class="card hero">
+          <div class="hero-copy">
+            <div class="eyebrow">Inspection layer · v0.1</div>
+            <h2>Scan files without sending them anywhere.</h2>
+            <p>Select files or a folder to calculate SHA-256 locally and review lightweight signals such as executable extensions, mismatched headers, double extensions, and the explicit EICAR test pattern.</p>
+            <div class="hero-actions"><button id="choose-files" class="button primary">＋ Choose files</button><button id="choose-folder" class="button secondary">▦ Choose folder</button></div>
+            <div class="notice"><span>ⓘ</span><div><strong>Scope boundary:</strong> Venom is an inspection and triage layer. It is not real-time protection, does not execute files, and does not contain a malware engine or quarantine. EICAR is checked only in the first 1 MiB sample.</div></div>
+            <input id="file-input" class="hidden" type="file" multiple>
+            <input id="folder-input" class="hidden" type="file" webkitdirectory directory multiple>
+          </div>
+        </section>
+
+        <section class="metrics" aria-label="Scan metrics">
+          <div class="metric"><span class="metric-label">Files in history</span><strong id="metric-files">0</strong><small>saved locally</small></div>
+          <div class="metric"><span class="metric-label">High attention</span><strong id="metric-high">0</strong><small>across saved results</small></div>
+          <div class="metric"><span class="metric-label">Last scan</span><strong id="metric-last">—</strong><small>browser time</small></div>
+          <div class="metric"><span class="metric-label">Bytes inspected</span><strong id="metric-bytes">0 B</strong><small>latest completed batch</small></div>
+          <div class="metric"><span class="metric-label">Last duration</span><strong id="metric-duration">—</strong><small>local processing time</small></div>
+        </section>
+
+        <div class="dashboard-grid">
+          <section class="card">
+            <div class="section-head"><div><h2>Inspection queue</h2><p id="queue-caption">Add up to 32 files per batch.</p></div></div>
+            <div id="selected-list" class="selected-list"><div class="selected-empty">Choose files or a folder to prepare a local inspection.</div></div>
+            <div id="scan-alert" class="alert" role="status" aria-live="polite"></div>
+            <div class="queue-actions"><button id="scan-button" class="button primary" disabled>Run local inspection</button><button id="cancel-scan" class="button secondary" disabled>Cancel</button><button id="clear-queue" class="button ghost">Clear</button><span id="progress-label" class="row-meta" style="align-self:center">No files selected</span></div>
+            <div id="progress-wrap" class="progress-wrap hidden" role="status" aria-live="polite"><div class="progress-track"><div id="progress-bar" class="progress-bar"></div></div><span id="progress-count">0 / 0</span></div>
+          </section>
+
+          <aside class="card">
+            <div class="section-head"><div><h2>Inspection layers</h2><p>What this browser can tell you.</p></div></div>
+            <div class="engine-list">
+              <div class="engine-row"><div><strong>SHA-256 hashing</strong><span>Calculated on this device</span></div><span class="engine-state ready">Ready</span></div>
+              <div class="engine-row"><div><strong>Local heuristics</strong><span>Type, header, filename signals</span></div><span class="engine-state ready">Ready</span></div>
+              <div class="engine-row"><div><strong>EICAR pattern</strong><span>Explicit test-string check</span></div><span class="engine-state ready">Ready</span></div>
+              <div class="engine-row"><div><strong>Real-time monitor</strong><span>Background protection</span></div><span class="engine-state">Inactive</span></div>
+              <div class="engine-row"><div><strong>Malware definitions</strong><span>Engine signatures</span></div><span class="engine-state">Not connected</span></div>
+            </div>
+             <div class="review-box"><p><strong>Optional AI Review</strong><br>Send only result metadata — never file bytes — to <code>/api/ai-review</code> after you opt in.</p><label class="check"><input id="ai-consent" type="checkbox"> I understand that result metadata will leave this browser.</label><button id="ai-review" class="button ai" disabled>✦ Review metadata with AI</button><div id="ai-alert" class="alert" role="status" aria-live="polite"></div></div>
+             <div class="review-box defender-box"><p><strong>Windows Defender bridge</strong><br>Use the installed Windows Defender engine for one explicit, non-remediating file scan. The path stays on this local bridge.</p><div id="defender-engine-status" class="engine-check">Checking local Defender availability…</div><input id="defender-path" class="defender-path" type="text" spellcheck="false" autocomplete="off" placeholder="C:\\Users\\you\\Downloads\\file.exe"><button id="defender-scan" class="button secondary" disabled>◈ Scan with Defender</button><div id="defender-alert" class="alert" role="status" aria-live="polite"></div></div>
+          </aside>
+        </div>
+
+        <section class="card" style="margin-top:16px"><div class="section-head"><div><h2>Latest results</h2><p>Risk labels are attention levels, not clean or infected verdicts.</p></div><div class="queue-actions" style="margin-top:0"><button id="download-report" class="button secondary" disabled>Download JSON report</button><span class="status-pill" style="color:var(--muted);border-color:var(--line);background:transparent">STAYS ON THIS DEVICE</span></div></div><div id="result-list" class="result-list"><div class="empty">Your latest inspection results will appear here.</div></div></section>
+      </section>
+
+      <section id="view-history" class="hidden history-page">
+        <header class="topbar"><div><div class="eyebrow">Venom / local record</div><h1>Scan history.</h1><p>Stored in this browser’s localStorage. File contents are never stored.</p></div><span class="status-pill"><span class="status-dot"></span> LOCAL RECORD</span></header>
+        <section class="card"><div class="section-head"><div><h2>Past inspections</h2><p>Use this as a review trail, not a guarantee of safety.</p></div><button id="clear-history" class="button secondary">Clear history</button></div><div id="history-list" class="history-list"><div class="empty">No saved inspections yet.</div></div><div id="history-alert" class="alert" role="status" aria-live="polite"></div></section>
+      </section>
+
+      <section id="view-about" class="hidden">
+        <header class="topbar"><div><div class="eyebrow">Venom / honest boundaries</div><h1>Inspection, not protection.</h1><p>A small local-first layer for deciding what deserves a closer look.</p></div><span class="status-pill"><span class="status-dot"></span> TRANSPARENT BY DESIGN</span></header>
+        <section class="card about-copy"><h2>What Venom does</h2><p>Venom reads the files you explicitly select in the browser. It calculates a SHA-256 hash locally, checks only the first 1 MiB for the EICAR antivirus test string, and applies explainable filename, size, and header heuristics.</p><p>High, medium, and low labels indicate how much attention a result deserves. “No local indicator” never means clean, safe, or virus-free.</p><p>Nothing is uploaded during local inspection. AI Review is a separate, opt-in action and sends result metadata only to the configured <code>/api/ai-review</code> route.</p><div class="about-grid"><div class="about-tile"><strong>Not real-time</strong><p>No background watcher or continuous device protection is active.</p></div><div class="about-tile"><strong>Not an engine</strong><p>No malware definitions, cloud reputation, execution, quarantine, or deletion.</p></div><div class="about-tile"><strong>Bounded by design</strong><p>32 files per batch and 128 MiB per file keep browser work explicit.</p></div></div></section>
+      </section>
+    </main>
+  </div>
+
+  <script src="venom_policy.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      var policy = window.VenomPolicy;
+      var HISTORY_KEY = 'venom.antivirus.history.v1';
+      var SAMPLE_BYTES = 1024 * 1024;
+      var selectedFiles = [];
+      var latestResults = [];
+      var storageReadError = false;
+      var history = readHistory();
+      var scanState = { active: false, cancelRequested: false, batch: [], startedAt: 0, bytesRead: 0, completed: 0, failed: 0 };
+      var latestBatchBytes = 0;
+      var latestBatchDuration = 0;
+      var aiBusy = false;
+      var aiController = null;
+      var aiRequestGeneration = 0;
+      var defenderReady = false;
+      var defenderBusy = false;
+
+      function $(id) { return document.getElementById(id); }
+      function show(element, visible) { element.classList.toggle('hidden', !visible); }
+      function safeText(value) { return String(value === null || typeof value === 'undefined' ? '' : value); }
+      function readHistory() {
+        try {
+          var parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+          return policy.validateHistory(parsed);
+        } catch (_) { storageReadError = true; return []; }
+      }
+      function saveHistory() {
+        try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, policy.MAX_HISTORY_SIZE))); return true; }
+        catch (_) { return false; }
+      }
+      function formatBytes(size) {
+        var value = Number(size) || 0;
+        if (value < 1024) return value + ' B';
+        if (value < 1024 * 1024) return (value / 1024).toFixed(1) + ' KB';
+        if (value < 1024 * 1024 * 1024) return (value / 1024 / 1024).toFixed(1) + ' MB';
+        return (value / 1024 / 1024 / 1024).toFixed(1) + ' GB';
+      }
+      function formatDuration(milliseconds) {
+        var value = Math.max(0, Number(milliseconds) || 0);
+        return value < 1000 ? Math.round(value) + ' ms' : (value / 1000).toFixed(2) + ' s';
+      }
+      function nowMs() { return window.performance && typeof window.performance.now === 'function' ? window.performance.now() : Date.now(); }
+      function formatTime(value) {
+        try { var date = new Date(value); if (!isFinite(date.getTime())) return 'Unknown time'; return date.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (_) { return 'Unknown time'; }
+      }
+      function shortHash(hash) { return hash && hash.length > 25 ? hash.slice(0, 18) + '…' + hash.slice(-7) : (hash || 'Hash unavailable'); }
+      function setAlert(id, message, kind) {
+        var element = $(id); element.textContent = message || ''; element.className = 'alert' + (message ? ' show ' + (kind || 'error') : '');
+      }
+      function fileKey(file) { return safeText(file.webkitRelativePath || file.name) + '|' + file.size + '|' + file.lastModified; }
+      function updateAiButton() { $('ai-review').disabled = scanState.active || aiBusy || !$('ai-consent').checked || !latestResults.length; }
+      function updateControls() {
+        $('choose-files').disabled = scanState.active; $('choose-folder').disabled = scanState.active;
+        $('clear-queue').disabled = scanState.active; $('scan-button').disabled = scanState.active || !selectedFiles.length;
+        $('cancel-scan').disabled = !scanState.active; updateAiButton();
+      }
+      function addFiles(fileList) {
+        if (scanState.active) return;
+        var incoming = Array.prototype.slice.call(fileList || []); var accepted = []; var rejected = 0;
+        incoming.forEach(function (file) {
+          if (file.size > policy.MAX_FILE_BYTES) { rejected += 1; return; }
+          if (!selectedFiles.some(function (existing) { return fileKey(existing) === fileKey(file); })) accepted.push(file);
+        });
+        var room = Math.max(0, policy.MAX_BATCH_SIZE - selectedFiles.length); selectedFiles = selectedFiles.concat(accepted.slice(0, room));
+        if (accepted.length > room || rejected) setAlert('scan-alert', (accepted.length > room ? 'Batch limit reached: only 32 files can be inspected at once. ' : '') + (rejected ? rejected + ' file(s) exceeded the 128 MiB browser limit and were skipped.' : ''), 'error');
+        else setAlert('scan-alert', '', '');
+        renderSelected();
+      }
+      function renderSelected() {
+        var list = $('selected-list'); list.replaceChildren();
+        $('queue-caption').textContent = selectedFiles.length ? selectedFiles.length + ' file' + (selectedFiles.length === 1 ? '' : 's') + ' ready · max 32 per batch' : 'Add up to 32 files per batch.';
+        $('progress-label').textContent = scanState.active ? 'Batch snapshot is being inspected' : (selectedFiles.length ? 'Ready to inspect locally' : 'No files selected');
+        if (!selectedFiles.length) { list.innerHTML = '<div class="selected-empty">Choose files or a folder to prepare a local inspection.</div>'; updateControls(); return; }
+        selectedFiles.forEach(function (file, index) {
+          var row = document.createElement('div'); row.className = 'selected-row'; var icon = document.createElement('span'); icon.className = 'file-icon'; icon.textContent = '•'; var copy = document.createElement('div');
+          var name = document.createElement('div'); name.className = 'row-name'; name.title = file.webkitRelativePath || file.name; name.textContent = file.name;
+          var meta = document.createElement('div'); meta.className = 'row-meta'; meta.textContent = (file.webkitRelativePath ? file.webkitRelativePath + ' · ' : '') + formatBytes(file.size); copy.append(name, meta);
+          var remove = document.createElement('button'); remove.className = 'row-remove'; remove.type = 'button'; remove.textContent = 'Remove'; remove.disabled = scanState.active; remove.addEventListener('click', function () { if (scanState.active) return; selectedFiles.splice(index, 1); renderSelected(); });
+          row.append(icon, copy, remove); list.append(row);
+        });
+        updateControls();
+      }
+      function bytesToHex(bytes) { return Array.prototype.map.call(new Uint8Array(bytes), function (byte) { return byte.toString(16).padStart(2, '0'); }).join(''); }
+      async function inspectFile(file) {
+        var started = nowMs(); var buffer = await file.arrayBuffer(); var allBytes = new Uint8Array(buffer); var sample = allBytes.slice(0, SAMPLE_BYTES);
+        var metadata = policy.classifyFile(file.webkitRelativePath || file.name, file.type, file.size, allBytes.slice(0, 16), sample); var hash = '';
+        if (!window.crypto || !window.crypto.subtle) throw new Error('SHA-256 is unavailable in this browser.');
+        hash = bytesToHex(await window.crypto.subtle.digest('SHA-256', buffer));
+        metadata.hash = hash; metadata.sha256 = hash; metadata.hashScope = 'full file'; metadata.relativePath = file.webkitRelativePath || '';
+        metadata.inspectedAt = new Date().toISOString(); metadata.created_at = metadata.inspectedAt; metadata.detections = metadata.findings.slice(0); metadata.status = 'complete'; metadata.bytesRead = buffer.byteLength; metadata.durationMs = nowMs() - started;
+        return metadata;
+      }
+      function appendDetails(copy, result) {
+        var detail = document.createElement('details'); var summary = document.createElement('summary'); summary.textContent = 'Details · ' + ((result.findings || result.detections || []).length) + ' finding(s)'; detail.append(summary);
+        var findings = document.createElement('ul'); findings.style.margin = '8px 0 4px'; findings.style.paddingLeft = '20px';
+        (result.findings || result.detections || []).forEach(function (finding) { var item = document.createElement('li'); item.className = 'finding' + (/EICAR/i.test(finding) ? ' eicar' : ''); item.textContent = finding; findings.append(item); }); detail.append(findings);
+        var measure = document.createElement('div'); measure.className = 'row-meta'; measure.textContent = formatBytes(result.bytesRead || 0) + ' read · ' + formatDuration(result.durationMs || 0) + ' local time'; detail.append(measure);
+        var hash = document.createElement('div'); hash.className = 'hash'; hash.textContent = 'SHA-256 · ' + (result.hash || 'Unavailable') + ' · ' + (result.hashScope || 'not calculated'); detail.append(hash); copy.append(detail);
+      }
+      function renderResult(result, compact) {
+        var row = document.createElement('div'); row.className = compact ? 'history-row' : 'result-row'; var icon = document.createElement('span'); icon.className = 'file-icon'; icon.textContent = result.eicarDetected ? '!' : '•'; var copy = document.createElement('div');
+        var name = document.createElement('div'); name.className = 'row-name'; name.title = result.name; name.textContent = result.name; var meta = document.createElement('div'); meta.className = 'row-meta';
+        meta.textContent = formatBytes(result.size) + ' · ' + (result.mime || 'unknown') + ' · ' + (result.status === 'complete' ? 'complete' : 'incomplete') + (compact ? ' · ' + formatTime(result.inspectedAt || result.created_at) : ''); copy.append(name, meta);
+        appendDetails(copy, result);
+        var risk = document.createElement('span'); risk.className = 'risk ' + result.severity; risk.textContent = result.eicarDetected ? 'HIGH · EICAR' : result.severity.toUpperCase() + ' · ' + (result.label || 'Attention'); row.append(icon, copy, risk); return row;
+      }
+      function renderResults() { var list = $('result-list'); list.replaceChildren(); if (!latestResults.length) { list.innerHTML = '<div class="empty">Your latest inspection results will appear here.</div>'; $('download-report').disabled = true; return; } latestResults.forEach(function (result) { list.append(renderResult(result, false)); }); $('download-report').disabled = false; }
+      function renderHistory() { var list = $('history-list'); list.replaceChildren(); if (!history.length) { list.innerHTML = '<div class="empty">No saved inspections yet.</div>'; return; } history.forEach(function (result) { list.append(renderResult(result, true)); }); }
+      function updateMetrics() {
+        $('metric-files').textContent = history.length; $('metric-high').textContent = history.filter(function (item) { return item.severity === 'high'; }).length; $('metric-last').textContent = history.length ? formatTime(history[0].inspectedAt || history[0].created_at) : '—';
+        $('metric-bytes').textContent = formatBytes(latestBatchBytes); $('metric-duration').textContent = latestBatchDuration ? formatDuration(latestBatchDuration) : '—';
+      }
+      function incompleteResult(file, error) { return { name: file.webkitRelativePath || file.name, size: file.size, mime: file.type || 'unknown', extension: policy.extensionOf(file.name), severity: 'medium', label: 'Inspection incomplete', findings: ['The browser could not complete local inspection: ' + safeText(error && error.message ? error.message : 'read error') + '.'], detections: ['Inspection incomplete.'], hash: '', sha256: '', hashScope: 'unavailable', status: 'incomplete', eicarDetected: false, inspectedAt: new Date().toISOString(), created_at: new Date().toISOString(), bytesRead: 0, durationMs: 0 }; }
+      async function runScan() {
+        if (scanState.active || !selectedFiles.length) return;
+        aiRequestGeneration += 1; if (aiController) aiController.abort(); aiController = null; aiBusy = false; scanState = { active: true, cancelRequested: false, batch: selectedFiles.slice(), startedAt: nowMs(), bytesRead: 0, completed: 0, failed: 0 }; latestResults = []; latestBatchBytes = 0; latestBatchDuration = 0; $('ai-consent').checked = false; setAlert('ai-alert', '', ''); renderResults(); renderSelected(); show($('progress-wrap'), true); $('progress-bar').style.width = '0%'; $('progress-count').textContent = '0 / ' + scanState.batch.length; setAlert('scan-alert', '', ''); updateControls();
+        var batch = scanState.batch;
+        for (var index = 0; index < batch.length; index += 1) {
+          if (scanState.cancelRequested) break;
+          $('progress-label').textContent = 'Inspecting ' + batch[index].name;
+          try { var result = await inspectFile(batch[index]); latestResults.push(result); scanState.bytesRead += result.bytesRead; }
+          catch (error) { latestResults.push(incompleteResult(batch[index], error)); scanState.failed += 1; }
+          scanState.completed += 1; var percent = Math.round((scanState.completed / batch.length) * 100); $('progress-bar').style.width = percent + '%'; $('progress-count').textContent = scanState.completed + ' / ' + batch.length; renderResults();
+        }
+        latestBatchBytes = scanState.bytesRead; latestBatchDuration = nowMs() - scanState.startedAt; var canceled = scanState.cancelRequested && scanState.completed < batch.length; var persisted = false;
+        if (latestResults.length) { history = latestResults.concat(history).slice(0, policy.MAX_HISTORY_SIZE); persisted = saveHistory(); }
+        scanState.active = false; renderSelected(); renderHistory(); updateMetrics(); show($('progress-wrap'), false); updateControls();
+        if (!persisted && latestResults.length) setAlert('scan-alert', 'Inspection finished, but browser storage is unavailable; results are not saved in history.', 'error');
+        else if (canceled) setAlert('scan-alert', 'Inspection canceled after ' + scanState.completed + ' of ' + batch.length + ' files. Partial results were' + (persisted ? '' : ' not') + ' saved; remaining files were not inspected.', persisted ? 'success' : 'error');
+        else if (scanState.failed) setAlert('scan-alert', 'Inspection finished with ' + scanState.failed + ' incomplete file(s) out of ' + batch.length + '. Results were' + (persisted ? '' : ' not') + ' saved.', persisted ? 'success' : 'error');
+        else setAlert('scan-alert', batch.length + ' file' + (batch.length === 1 ? '' : 's') + ' inspected locally in ' + formatDuration(latestBatchDuration) + '. Results were' + (persisted ? '' : ' not') + ' saved; no file content was uploaded.', persisted ? 'success' : 'error');
+      }
+      function requestCancel() { if (scanState.active) { scanState.cancelRequested = true; $('progress-label').textContent = 'Canceling after the current file…'; $('cancel-scan').disabled = true; } }
+      function downloadReport() {
+        if (!latestResults.length) return;
+        var report = { generated_at: new Date().toISOString(), results: latestResults.map(policy.aiMetadata) }; var blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }); var url = URL.createObjectURL(blob); var link = document.createElement('a'); link.href = url; link.download = 'venom-inspection-report.json'; link.click(); setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+      }
+      function reviewMessage(payload, response) {
+        var status = payload && typeof payload.status === 'string' ? payload.status.toLowerCase() : '';
+        var explanation = payload && typeof payload.explanation === 'string' ? payload.explanation : '';
+        var notice = payload && typeof payload.notice === 'string' ? payload.notice : '';
+        var detail = [explanation, notice].filter(Boolean).join(' ');
+        if (!response.ok || status === 'busy' || status === 'unavailable' || status === 'error') return { message: 'AI Review unavailable (' + (status || 'HTTP ' + response.status) + '). ' + (detail || 'The review service did not provide an explanation.'), kind: 'error' };
+        if (!payload || payload.ai_used !== true) return { message: 'AI Review did not run. ' + (detail || 'The service did not use an AI reviewer.'), kind: 'error' };
+        return { message: detail || 'AI Review completed without an explanation.', kind: payload && payload.ai_used === true ? 'success' : 'error' };
+      }
+      async function loadDefenderStatus() {
+        try {
+          var response = await fetch('/api/defender-status', { headers: { 'Accept': 'application/json' } });
+          var payload = await response.json().catch(function () { return {}; });
+          defenderReady = response.ok && payload.available === true;
+          $('defender-engine-status').textContent = payload.message || (defenderReady ? 'Windows Defender bridge is ready.' : 'Windows Defender bridge is unavailable.');
+          $('defender-engine-status').style.color = defenderReady ? 'var(--mint)' : 'var(--amber)';
+          $('defender-scan').disabled = !defenderReady;
+        } catch (_) {
+          defenderReady = false; $('defender-engine-status').textContent = 'Could not check Windows Defender availability.'; $('defender-engine-status').style.color = 'var(--amber)'; $('defender-scan').disabled = true;
+        }
+      }
+      async function scanWithDefender() {
+        if (defenderBusy || !defenderReady) return;
+        var path = $('defender-path').value.trim();
+        if (!path) { setAlert('defender-alert', 'Enter an absolute Windows file path first.', 'error'); return; }
+        if (!window.confirm('Run a non-remediating Windows Defender scan for this file?\n\n' + path)) return;
+        defenderBusy = true; $('defender-scan').disabled = true; setAlert('defender-alert', 'Starting Windows Defender… this may take up to two minutes.', 'success');
+        var controller = window.AbortController ? new AbortController() : null; var timeout = controller ? setTimeout(function () { controller.abort(); }, 125000) : null;
+        try {
+          var response = await fetch('/api/defender-scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: path }), signal: controller ? controller.signal : undefined });
+          var payload = await response.json().catch(function () { return {}; });
+          if (!response.ok) throw new Error(payload.error || 'Defender scan request failed.');
+          var detail = payload.details ? ' Details: ' + payload.details.slice(0, 800) : '';
+          setAlert('defender-alert', (payload.message || 'Defender returned a result.') + detail, payload.status === 'no-detection' ? 'success' : 'error');
+        } catch (error) { setAlert('defender-alert', error && error.name === 'AbortError' ? 'Defender scan timed out locally. No remediation was requested.' : (error.message || 'Defender scan could not be completed.'), 'error'); }
+        finally { if (timeout) clearTimeout(timeout); defenderBusy = false; $('defender-scan').disabled = !defenderReady; }
+      }
+      async function requestAiReview() {
+        if (aiBusy || scanState.active) return;
+        if (!$('ai-consent').checked) { setAlert('ai-alert', 'Check the consent box before sending result metadata.', 'error'); return; }
+        if (!latestResults.length) { setAlert('ai-alert', 'Run a local inspection before requesting AI Review.', 'error'); return; }
+        if (!window.AbortController) { setAlert('ai-alert', 'AI Review is unavailable because this browser cannot enforce a request timeout.', 'error'); return; }
+        var aiBatch = latestResults.slice().map(policy.aiMetadata); aiBusy = true; aiController = new AbortController(); var requestGeneration = ++aiRequestGeneration; updateAiButton(); setAlert('ai-alert', 'Sending allowlisted result metadata to /api/ai-review…', 'success'); var timeout = setTimeout(function () { if (aiController) aiController.abort(); }, 8000);
+        try {
+          var response = await fetch('/api/ai-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(aiBatch), signal: aiController.signal }); var payload = await response.json().catch(function () { return {}; }); var result = reviewMessage(payload, response); if (requestGeneration === aiRequestGeneration) setAlert('ai-alert', result.message, result.kind);
+        } catch (error) { if (requestGeneration === aiRequestGeneration) setAlert('ai-alert', error && error.name === 'AbortError' ? 'AI Review timed out after 8 seconds. No file content was sent.' : 'AI Review could not connect. No file content was sent; local results remain available.', 'error'); }
+        clearTimeout(timeout); if (requestGeneration === aiRequestGeneration) { aiController = null; aiBusy = false; updateAiButton(); }
+      }
+      function switchView(view) { ['dashboard', 'history', 'about'].forEach(function (name) { show($('view-' + name), name === view); }); document.querySelectorAll('.nav-item').forEach(function (button) { button.classList.toggle('active', button.getAttribute('data-view') === view); }); if (view === 'history') renderHistory(); }
+      document.querySelectorAll('.nav-item').forEach(function (button) { button.addEventListener('click', function () { switchView(button.getAttribute('data-view')); }); });
+      $('choose-files').addEventListener('click', function () { if (!scanState.active) $('file-input').click(); }); $('choose-folder').addEventListener('click', function () { if (!scanState.active) $('folder-input').click(); });
+      $('file-input').addEventListener('change', function () { addFiles(this.files); this.value = ''; }); $('folder-input').addEventListener('change', function () { addFiles(this.files); this.value = ''; });
+      $('clear-queue').addEventListener('click', function () { if (scanState.active) return; selectedFiles = []; setAlert('scan-alert', '', ''); renderSelected(); }); $('scan-button').addEventListener('click', runScan); $('cancel-scan').addEventListener('click', requestCancel);
+      $('ai-consent').addEventListener('change', updateAiButton); $('ai-review').addEventListener('click', requestAiReview); $('download-report').addEventListener('click', downloadReport);
+      $('defender-scan').addEventListener('click', scanWithDefender); $('defender-path').addEventListener('keydown', function (event) { if (event.key === 'Enter') scanWithDefender(); });
+      $('clear-history').addEventListener('click', function () { if (scanState.active) return; try { localStorage.removeItem(HISTORY_KEY); history = []; renderHistory(); updateMetrics(); setAlert('history-alert', 'Local scan history cleared.', 'success'); } catch (_) { setAlert('history-alert', 'Could not clear local scan history because browser storage is unavailable.', 'error'); } });
+      renderSelected(); renderResults(); renderHistory(); updateMetrics(); updateControls(); loadDefenderStatus(); if (storageReadError) setAlert('scan-alert', 'Could not read local scan history because browser storage is unavailable.', 'error');
+    }());
+  </script>
+</body>
+</html>
