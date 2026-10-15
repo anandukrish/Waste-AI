@@ -86,8 +86,9 @@ installed.
 
 ## Browser preview
 
-The companion serves this file at `/` and the preview uses fixed same-origin
-`/api/...` paths. It has no external dependencies, third-party web APIs, or
+The companion serves this file at `/` and a fixed same-origin
+`/security_policy.js` asset; the preview uses fixed same-origin `/api/...`
+paths. It has no external dependencies, third-party web APIs, or
 service worker. The browser pairing token lives in JavaScript memory only; it
 is never written to `localStorage`. Entering a token is labeled **TOKEN SET**,
 not authenticated; the API remains the authority. Notes and history do use
@@ -101,8 +102,8 @@ voice values stored in browser storage, and the microphone button places a
 recognized transcript in the composer without sending it.
 `chat_policy.js` exports the pure history/message bound logic for a Node or
 Windows Script Host smoke test. `voice_policy.js` covers the pure speech bound
-and locale preference; both policies are embedded or copied into
-`index.html` because the companion serves only `/`.
+and locale preference. `security_policy.js` is the same-origin local file
+heuristics module served by the companion and covered by its own smoke test.
 
 ## Checks
 
@@ -114,11 +115,13 @@ flutter analyze
 # browser policy smoke tests:
 node web-preview/chat_policy_test.js
 node web-preview/voice_policy_test.js
+node web-preview/security_policy_test.js
 # or on Windows without Node:
 cscript //nologo web-preview/chat_policy_test.js
 cscript //nologo web-preview/voice_policy_test.js
+cscript //nologo web-preview/security_policy_test.js
 ```
 
-Those checks could not be executed in the preparation environment because
-Flutter/Dart/Node were not on PATH. No APK, Windows executable, or generated
-platform directory is claimed by this source-only deliverable.
+The source repo does not track generated platform directories or a Windows
+installer. A verified Android debug APK is published in the preview release;
+real device/emulator and Windows installer UI checks remain environment-specific.

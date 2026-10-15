@@ -86,9 +86,15 @@ AF614F63AC0D2EAF4395D8DEE503F78F6CD1C174D10EDC45DE26D896B4700501
 - Offline history is excluded from online requests, even after switching modes.
 - Local arithmetic, help and time commands without a language model.
 - An Ollama adapter for open-ended offline conversation.
+- Malayalam-aware prompt guidance for open-ended replies, with explicit limits
+  against invented actions and secret disclosure.
 - An HTTPS OpenAI-compatible adapter for optional online conversation.
 - Authenticated Windows companion with short-lived, one-use action confirmations.
 - Flutter client source for Windows and Android, with secure token storage.
+- Browser Security Center preview for local-only file inspection: SHA-256 hashing,
+  transparent extension/header heuristics, local history, and explicit engine
+  limitations. It is not a replacement for Microsoft Defender, ClamAV, or a
+  commercial malware engine.
 
 ## What is NOT finished or installed
 
@@ -98,6 +104,10 @@ AF614F63AC0D2EAF4395D8DEE503F78F6CD1C174D10EDC45DE26D896B4700501
 - **No cloud provider is connected.** Online chat requires an endpoint, model and API key configured on the companion.
 - **Voice interaction is available when the client platform exposes it.** Flutter uses native TTS and speech-recognition plugins, while the browser preview uses browser-native speech APIs. Malayalam (`ml-IN`) is preferred, with English India (`en-IN`) selectable. Voice is explicit push-to-talk/speak or auto-speak; no wake-word listener is enabled. Availability, permissions, and speech processing remain controlled by the OS/browser.
 - **No autonomous file management, web search, cross-device sync or Android on-device AI yet.**
+- **Security Center limitation:** the browser preview only inspects files the
+  user explicitly selects. It does not execute, upload, quarantine, delete, or
+  claim files are clean; real-time protection and malware definitions are not
+  connected.
 - Browser interactions and native builds have not been end-to-end UI tested. API, arithmetic, JavaScript policy, Python compile, Flutter analysis/tests, Android APK metadata, and packaging failure-propagation checks are available; Windows installer and real device checks remain pending.
 
 ## Privacy and data boundaries
@@ -154,11 +164,17 @@ Run from this folder:
 python -m unittest discover -s companion -t . -v
 cscript //nologo client\web-preview\chat_policy_test.js
 cscript //nologo client\web-preview\voice_policy_test.js
+cscript //nologo client\web-preview\security_policy_test.js
 python -m compileall -q companion launch.py
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File packaging\test-packaging.ps1
 ```
 
-Native checks pending prerequisite installation: `flutter pub get`, `flutter analyze`, `flutter test`, `flutter build windows`, and `flutter build apk` from the scaffolded client directory. Do not treat them as passed. The current source checkout has no generated Flutter platform directories and no APK/EXE output.
+Native verification in the current environment: Flutter `analyze --no-pub` and
+`test --no-pub` pass, and the Android debug APK metadata/signature was verified.
+The Windows installer and a real Android device/emulator flow remain pending.
+The source checkout does not track generated Flutter platform directories or the
+Windows installer; use `packaging\build-android.ps1` and
+`packaging\build-windows.ps1` for reproducible builds.
 
 ## Storage and removal
 

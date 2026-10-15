@@ -5,6 +5,7 @@ __pycache__/
 .env.*
 !.env.example
 runtime/
+.opencode/
 *.log
 *.pem
 *.key

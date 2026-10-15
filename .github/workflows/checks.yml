@@ -33,6 +33,8 @@ jobs:
         run: cscript //nologo client/web-preview/chat_policy_test.js
       - name: Test browser voice policy
         run: cscript //nologo client/web-preview/voice_policy_test.js
+      - name: Test browser security policy
+        run: cscript //nologo client/web-preview/security_policy_test.js
       - name: Check packaging scripts and failure propagation
         run: ./packaging/test-packaging.ps1
 

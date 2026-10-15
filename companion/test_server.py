@@ -183,6 +183,18 @@ class CompanionHTTPTests(unittest.TestCase):
         self.assertEqual((status, body), (200, {"reply": "online reply", "mode": "online"}))
         self.assertEqual(self.calls[-1][0], "https://provider.example/v1/chat/completions")
 
+    def test_provider_prompt_preserves_language_and_honesty_policy(self):
+        status, _ = self.request(
+            "POST",
+            "/api/chat",
+            payload={"message": "നമസ്കാരം, സഹായിക്കാമോ?", "mode": "offline", "history": []},
+        )
+        self.assertEqual(status, 200)
+        system_prompt = self.calls[-1][1]["messages"][0]["content"]
+        self.assertIn("prefer Malayalam", system_prompt)
+        self.assertIn("Never invent facts", system_prompt)
+        self.assertIn("Do not reveal secrets", system_prompt)
+
     def test_ollama_check_reports_ready_model_and_stays_local(self):
         os.environ.update({
             "WASTE_OFFLINE_MODEL": "qwen2.5:1.5b",
@@ -290,6 +302,16 @@ class CompanionHTTPTests(unittest.TestCase):
             self.assertEqual(status, 400)
 
     def test_preview_is_fixed_and_no_traversal(self):
+        self.assertIn(b'<script src="/security_policy.js"></script>', server.PREVIEW_PATH.read_bytes())
+        connection = http.client.HTTPConnection(self.host, self.port, timeout=3)
+        connection.request("GET", "/security_policy.js", headers={"Host": self.httpd.allowed_host})
+        response = connection.getresponse()
+        body = response.read().decode("utf-8")
+        connection.close()
+        status = response.status
+        self.assertEqual(status, 200)
+        self.assertIn("WasteSecurityPolicy", body)
+        self.assertEqual(response.getheader("Content-Type"), "application/javascript; charset=utf-8")
         status, _ = self.request("GET", "/../PROJECT.md", token=False, origin=None)
         self.assertEqual(status, 404)
 

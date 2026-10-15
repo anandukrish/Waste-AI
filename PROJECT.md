@@ -5,10 +5,12 @@ Original cross-platform assistant named Waste. Preserve sibling animation files.
 
 - Flutter client source for Windows and Android: chat, explicit offline/online selection, local notes, local conversation storage, connection settings and guarded Windows actions.
 - Python standard-library Windows companion: authenticated chat gateway to local Ollama or a configured HTTPS OpenAI-compatible endpoint, plus two-step allowlisted app launches.
-- A lightweight browser client provides a runnable Windows interface while native build tools are not installed. It is a companion preview, not an Android APK or installed Windows app.
+- A lightweight browser client provides a runnable Windows interface alongside the native Flutter clients. It is a companion preview, not a replacement for the installed Windows app or Android APK.
 - No automatic upload/fallback from offline mode to online mode.
 - No wake-word listener, arbitrary shell execution, file deletion, background surveillance, or on-device Android language model in this first release.
 - Voice is client-side: native Flutter uses device TTS/speech recognition and the browser preview uses browser speech APIs. Malayalam (`ml-IN`) is preferred, English India (`en-IN`) is selectable, and push-to-talk only fills the composer; there is no wake-word listener or automatic voice submission.
+- Open-ended model prompts explicitly prefer Malayalam for Malayalam-script input, preserve natural Malayalam-English mixing, and prohibit invented actions or leaked secrets.
+- The browser preview includes a Security Center for explicit local file inspection with SHA-256 metadata and transparent heuristics. It is not a malware engine and does not claim clean verdicts.
 
 ## Acceptance checks
 1. Save notes locally and retain them after reopening the client.
@@ -19,7 +21,7 @@ Original cross-platform assistant named Waste. Preserve sibling animation files.
 6. No API keys are embedded in source or chat history.
 
 ## Shared API contract
-Default origin: http://127.0.0.1:8765. Companion serves browser preview at `/` from `client/web-preview/index.html`.
+Default origin: http://127.0.0.1:8765. Companion serves the browser preview at `/` from `client/web-preview/index.html` and the fixed local-only policy asset at `/security_policy.js`.
 
 - GET `/api/health` is public: `{name:"Waste",version:"0.1.0"}`. No secrets or filesystem paths.
 - All other `/api/*` routes use `Authorization: Bearer <pairing token>`.
@@ -54,11 +56,14 @@ and exits non-zero when Ollama or the configured model is unavailable.
 ## Remaining limitations
 
 - There is no wake-word/background listener, autonomous file management, web
-  search, cross-device sync, or Android on-device language model.
+  search, cross-device sync, or Android on-device language model. Security
+  inspection is heuristic-only: no real-time monitoring, definitions, cloud
+  reputation, quarantine, deletion, or malware-family verdicts are provided.
 - Android and non-loopback clients still depend on a reachable companion; a
   non-loopback companion requires HTTPS and a trusted certificate.
 - Voice availability depends on OS/browser engines and permissions. WASTE does
   not provide a hosted speech service or guarantee Malayalam/English voices.
 - Flutter platform folders and compiled artifacts are generated only in a
   staging/build environment; the source checkout does not track an EXE or
-  installer. A debug APK can be regenerated with `packaging\build-android.ps1`.
+  installer. The verified debug APK is published in the preview release and
+  can be regenerated with `packaging\build-android.ps1`.

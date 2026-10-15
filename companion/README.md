@@ -1,9 +1,9 @@
 # Waste Python companion
 
 This is the Windows companion gateway for Waste. It uses only Python's
-standard library and serves the browser preview at `/` when the preview file
-exists. Notes, voice preferences, and conversation history remain in the
-client; the companion does not persist them.
+standard library and serves the browser preview at `/` plus its fixed,
+same-origin `security_policy.js` asset. Notes, voice preferences, and
+conversation history remain in the client; the companion does not persist them.
 
 ## Start locally
 
@@ -79,6 +79,9 @@ python -m companion.server
 The key is read only by the companion and is never returned in API errors,
 chat history, or startup output. Offline mode never falls back to online.
 Provider calls have a bounded 90-second timeout for small-model cold starts.
+Open-ended prompts prefer Malayalam for Malayalam-script input, preserve natural
+Malayalam-English mixing, and instruct the model not to invent actions or reveal
+secrets.
 Offline provider failures return a setup hint to start Ollama and pull the
 configured model, without returning provider response bodies.
 
@@ -123,6 +126,7 @@ python -m unittest companion.test_server -v
 python -m compileall -q companion launch.py
 ```
 
-The current checkout has no downloaded Ollama model. Native Flutter clients,
-an Android APK, and a Windows installer are not produced by this module; use
-the scripts under `packaging/` after installing their prerequisites.
+The current checkout has no downloaded Ollama model. Native Flutter clients and
+the Windows installer are not produced by this module; use the scripts under
+`packaging/` after installing their prerequisites. The preview Android debug APK
+is published from the repository release page.

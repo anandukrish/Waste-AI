@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0d1018">
-  <title>WASTE · local-first assistant</title>
+  <title>WASTE · privacy-first security center</title>
   <style>
-    :root { color-scheme: dark; --bg:#0d1018; --panel:#151a25; --panel-2:#1b2130; --line:#293246; --text:#edf2f7; --muted:#9aa6b8; --teal:#4ce0c1; --violet:#ae91ff; --danger:#ff9a9a; }
+    :root { color-scheme: dark; --bg:#0d1018; --panel:#151a25; --panel-2:#1b2130; --line:#293246; --text:#edf2f7; --muted:#9aa6b8; --teal:#4ce0c1; --violet:#ae91ff; --blue:#7fb3ff; --danger:#ff9a9a; --amber:#f4c56d; }
     * { box-sizing:border-box; }
     body { margin:0; min-height:100vh; background:radial-gradient(circle at 80% -10%, #24213d 0, transparent 38%), var(--bg); color:var(--text); font:15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
     button, input, textarea, select { font:inherit; }
@@ -67,13 +67,46 @@
     .form-grid { display:grid; gap:12px; max-width:650px; }
     label { display:grid; gap:6px; color:var(--muted); font-size:13px; }
     .button-row { display:flex; flex-wrap:wrap; gap:9px; align-items:center; }
-    .muted-note { padding:12px 14px; border-left:3px solid var(--violet); color:var(--muted); background:#ae91ff0e; }
-    .setup { position:fixed; inset:0; display:grid; place-items:center; padding:20px; background:#070910cc; backdrop-filter:blur(8px); z-index:5; }
+     .muted-note { padding:12px 14px; border-left:3px solid var(--violet); color:var(--muted); background:#ae91ff0e; }
+     .security-hero { position:relative; overflow:hidden; padding:26px; border-color:#4ce0c133; background:radial-gradient(circle at 84% 20%, #4ce0c11c, transparent 34%), linear-gradient(145deg,#182a2a,#131722); }
+     .security-hero::after { content:'✦'; position:absolute; right:30px; bottom:-35px; color:#4ce0c11c; font-size:180px; line-height:1; pointer-events:none; }
+     .security-hero .hero-copy { position:relative; z-index:1; max-width:680px; }
+     .eyebrow { margin-bottom:8px; color:var(--teal); font-size:11px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; }
+     .security-status { display:flex; align-items:center; gap:9px; margin:19px 0 21px; color:#d8fff4; font-weight:750; }
+     .status-dot { width:10px; height:10px; border-radius:50%; background:var(--teal); box-shadow:0 0 0 5px #4ce0c11f; }
+     .security-actions { display:flex; flex-wrap:wrap; gap:10px; }
+     .security-actions button { position:relative; z-index:1; }
+     .security-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+     .security-metric { padding:17px; border:1px solid var(--line); border-radius:15px; background:linear-gradient(145deg,#181d2a,#131722); }
+     .security-metric strong { display:block; margin-top:5px; font-size:25px; letter-spacing:-.6px; }
+     .security-metric span { color:var(--muted); font-size:12px; }
+     .security-layout { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(250px,.65fr); gap:16px; }
+     .scan-list { display:grid; gap:10px; }
+     .scan-row { display:grid; grid-template-columns:36px minmax(0,1fr) auto; gap:11px; align-items:center; padding:12px; border:1px solid var(--line); border-radius:13px; background:#111622; }
+     .file-icon { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; color:var(--blue); background:#7fb3ff14; }
+     .scan-name { overflow:hidden; color:var(--text); font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
+     .scan-meta { overflow:hidden; color:var(--muted); font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
+     .risk { padding:5px 8px; border:1px solid; border-radius:99px; font-size:10px; font-weight:800; letter-spacing:.5px; white-space:nowrap; }
+     .risk.low { color:var(--teal); border-color:#4ce0c155; background:#4ce0c112; }
+     .risk.medium { color:var(--amber); border-color:#f4c56d55; background:#f4c56d12; }
+     .risk.high { color:var(--danger); border-color:#ff9a9a55; background:#ff9a9a12; }
+     .engine-list { display:grid; gap:12px; }
+     .engine-item { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px solid #29324688; }
+     .engine-item:last-child { border-bottom:0; }
+     .engine-item strong { display:block; margin-bottom:2px; font-size:13px; }
+     .engine-item span { color:var(--muted); font-size:11px; }
+     .engine-pill { color:var(--amber); font-size:10px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; }
+     .scan-progress { display:flex; align-items:center; gap:10px; margin-top:15px; color:var(--muted); font-size:12px; }
+     .progress-track { flex:1; height:6px; overflow:hidden; border-radius:99px; background:#293246; }
+     .progress-bar { width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--teal),var(--blue)); transition:width .25s ease; }
+     .security-empty { padding:24px 12px; border:1px dashed #364159; border-radius:13px; color:var(--muted); text-align:center; }
+     .security-footnote { margin-top:14px; color:var(--muted); font-size:11px; }
+     .setup { position:fixed; inset:0; display:grid; place-items:center; padding:20px; background:#070910cc; backdrop-filter:blur(8px); z-index:5; }
     .setup-card { width:min(500px,100%); padding:26px; border:1px solid var(--line); border-radius:20px; background:#171b28; box-shadow:0 25px 100px #0008; }
     .setup-card h2 { margin-bottom:8px; font-size:24px; }
     .setup-card .form-grid { margin-top:18px; }
     .hidden { display:none !important; }
-    @media (max-width:700px) { .app { display:block; } .rail { display:flex; width:100%; padding:12px 14px; border-right:0; border-bottom:1px solid var(--line); } .brand { margin:0 16px 0 0; } nav { display:flex; flex:1; gap:4px; } .nav-button { padding:9px; text-align:center; } .main { padding:24px 15px 30px; } .hero { display:block; } .hero .badge { margin-top:15px; } .topline { margin-bottom:18px; } .messages { max-height:none; min-height:240px; } }
+   @media (max-width:700px) { .app { display:block; } .rail { display:flex; width:100%; padding:12px 14px; border-right:0; border-bottom:1px solid var(--line); } .brand { margin:0 16px 0 0; } nav { display:flex; flex:1; gap:4px; } .nav-button { padding:9px 6px; text-align:center; font-size:12px; } .main { padding:24px 15px 30px; } .hero { display:block; } .hero .badge { margin-top:15px; } .topline { margin-bottom:18px; } .messages { max-height:none; min-height:240px; } .security-grid, .security-layout { grid-template-columns:1fr; } .security-hero { padding:21px; } .security-hero::after { right:-6px; } .scan-row { grid-template-columns:34px minmax(0,1fr); } .scan-row .risk { grid-column:2; justify-self:start; } }
   </style>
 </head>
 <body>
@@ -81,8 +114,9 @@
     <aside class="rail">
       <div class="brand"><span class="brand-mark">✦</span><span>WASTE</span></div>
       <nav aria-label="Main navigation">
-        <button class="nav-button active" data-view="chat">◌ &nbsp; Chat</button>
-        <button class="nav-button" data-view="notes">▤ &nbsp; Notes</button>
+       <button class="nav-button active" data-view="chat">◌ &nbsp; Chat</button>
+       <button class="nav-button" data-view="security">◈ &nbsp; Security</button>
+       <button class="nav-button" data-view="notes">▤ &nbsp; Notes</button>
         <button class="nav-button" data-view="settings">⚙ &nbsp; Settings</button>
       </nav>
     </aside>
@@ -95,8 +129,32 @@
           <div id="chat-error" class="error hidden" role="alert"></div>
            <div class="composer"><textarea id="composer" rows="1" placeholder="Message the companion…"></textarea><button id="mic" class="secondary" type="button" aria-label="Push to talk">♩ Mic</button><button id="send" class="primary">Send ↑</button></div>
         </div>
-      </section>
-      <section id="view-notes" class="hidden">
+       </section>
+       <section id="view-security" class="hidden">
+         <div class="topline"><div><h1>Security Center</h1><p>A calm, privacy-first view of your local file hygiene.</p></div><span class="badge offline">● LOCAL ONLY</span></div>
+         <div class="card security-hero">
+           <div class="hero-copy">
+             <div class="eyebrow">WASTE Security · v0.1 preview</div>
+             <h2>Inspect before you trust.</h2>
+             <p style="margin-top:8px">Review files on this device with transparent local heuristics. Nothing is uploaded, executed, quarantined, or silently removed.</p>
+             <div class="security-status"><span class="status-dot"></span><span>Local inspection is ready</span></div>
+             <div class="security-actions"><button id="security-choose" class="primary">＋ Inspect files</button><button id="security-clear" class="secondary">Clear scan history</button></div>
+             <div id="security-progress" class="scan-progress hidden" role="status" aria-live="polite"><div class="progress-track"><div id="security-progress-bar" class="progress-bar"></div></div><span id="security-progress-label">Preparing…</span></div>
+             <p class="security-footnote">Up to 24 files per batch. SHA-256 is calculated only up to 128 MiB per file. Filenames, hashes and findings are saved in this browser’s plain local storage, not file contents.</p>
+             <input id="security-file-input" class="hidden" type="file" multiple>
+           </div>
+         </div>
+         <div class="security-grid">
+           <div class="security-metric"><span>Files inspected</span><strong id="security-total">0</strong><span>in this browser</span></div>
+           <div class="security-metric"><span>Review signals</span><strong id="security-findings">0</strong><span>heuristic indicators</span></div>
+           <div class="security-metric"><span>Engine status</span><strong style="font-size:18px">Local only</strong><span>no malware engine connected</span></div>
+         </div>
+         <div class="security-layout">
+           <div class="card"><div class="section-head"><h2>Recent inspections</h2><span class="mini-badge">STAYS ON THIS DEVICE</span></div><div id="security-results" class="scan-list"></div><p class="security-footnote">“No local indicator” means no heuristic matched. It does not mean safe or virus-free.</p></div>
+           <div class="card"><div class="section-head"><h2>Protection layers</h2></div><div class="engine-list"><div class="engine-item"><div><strong>Local file heuristics</strong><span>Extension and header review</span></div><span class="engine-pill" style="color:var(--teal)">Ready</span></div><div class="engine-item"><div><strong>Malware definitions</strong><span>Signature database</span></div><span class="engine-pill">Not connected</span></div><div class="engine-item"><div><strong>Real-time protection</strong><span>Background monitoring</span></div><span class="engine-pill">Not active</span></div><div class="engine-item"><div><strong>Cloud reputation</strong><span>Online file lookups</span></div><span class="engine-pill">Off</span></div></div><div class="muted-note" style="margin-top:14px">For production-grade detection, connect an installed engine such as Microsoft Defender or ClamAV. This preview deliberately does not pretend to replace one.</div></div>
+         </div>
+       </section>
+       <section id="view-notes" class="hidden">
         <div class="topline"><div><h1>Notes</h1><p>Saved only on this browser.</p></div><span class="badge offline">● LOCAL</span></div>
         <div class="card"><div class="section-head"><h2>Your notes</h2><div class="button-row"><button id="clear-notes" class="secondary">Clear all</button><button id="new-note" class="primary">＋ New note</button></div></div><div id="notes" class="notes-grid"></div></div>
       </section>
@@ -114,15 +172,18 @@
   <div id="setup" class="setup">
     <div class="setup-card"><h2>Welcome to WASTE</h2><p>Your notes work offline and stay in this browser. Chat connects only when you explicitly select a mode and pair with the local companion.</p><div class="form-grid"><label>Pairing token<input id="setup-token" type="password" autocomplete="off" placeholder="Optional for exploring notes"></label><div class="button-row"><button id="setup-explore" class="secondary">Explore locally</button><button id="setup-pair" class="primary">Pair in memory</button></div></div></div>
   </div>
+  <script src="/security_policy.js"></script>
   <script>
     (() => {
       'use strict';
       const API = '/api';
        const NOTES_KEY = 'waste.web.notes';
        const HISTORY_KEY = 'waste.web.history';
-       const VOICE_KEY = 'waste.web.voice';
+        const VOICE_KEY = 'waste.web.voice';
+        const SECURITY_KEY = 'waste.web.security.history';
        const MAX_HISTORY = 40;
        const CHAT_LIMITS = { maxOutgoingHistoryItems: 30, maxOutgoingHistoryChars: 24000, maxOutgoingItemChars: 8000, maxOutgoingMessageChars: 8000 };
+       const SECURITY_POLICY = window.WasteSecurityPolicy || null;
        const VOICE_POLICY = (() => {
          const normalizeLocale = (value) => String(value || '').trim().toLowerCase().replace(/_/g, '-');
          const localeCandidates = (language) => {
@@ -160,7 +221,8 @@
        let token = '';
       let mode = 'offline';
       let history = readList(HISTORY_KEY).slice(-MAX_HISTORY);
-      let notes = readList(NOTES_KEY);
+       let notes = readList(NOTES_KEY);
+        let securityResults = readSecurityResults();
        let sending = false;
        let voiceSettings = readVoiceSettings();
        let deviceVoices = [];
@@ -169,7 +231,8 @@
       const $ = (id) => document.getElementById(id);
       const show = (element, visible) => element.classList.toggle('hidden', !visible);
       const setMessage = (id, message, kind) => { const box = $(id); box.textContent = message; box.className = kind; };
-       function readList(key) { try { const parsed = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(parsed) ? parsed : []; } catch (_) { return []; } }
+        function readList(key) { try { const parsed = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(parsed) ? parsed : []; } catch (_) { return []; } }
+        function readSecurityResults() { return readList(SECURITY_KEY).filter((item) => item && typeof item === 'object' && typeof item.name === 'string' && ['low', 'medium', 'high'].includes(item.severity)).slice(0, 24).map((item) => ({ name: item.name.slice(0, 240), extension: typeof item.extension === 'string' ? item.extension.slice(0, 12) : '', size: Number.isFinite(Number(item.size)) ? Math.max(0, Number(item.size)) : 0, mime: typeof item.mime === 'string' ? item.mime.slice(0, 120) : 'unknown', severity: item.severity, label: typeof item.label === 'string' ? item.label.slice(0, 80) : item.severity === 'high' ? 'High attention' : item.severity === 'medium' ? 'Review recommended' : 'No local indicator', findings: Array.isArray(item.findings) ? item.findings.filter((finding) => typeof finding === 'string').slice(0, 8).map((finding) => finding.slice(0, 300)) : [], hash: typeof item.hash === 'string' && /^[0-9a-f]{64}$/i.test(item.hash) ? item.hash : '', createdAt: typeof item.createdAt === 'string' && !Number.isNaN(Date.parse(item.createdAt)) ? item.createdAt : new Date(0).toISOString() })); }
        function readVoiceSettings() { try { const raw = JSON.parse(localStorage.getItem(VOICE_KEY) || '{}'); const rate = typeof raw.rate === 'number' ? raw.rate : .5; const volume = typeof raw.volume === 'number' ? raw.volume : 1; return { autoSpeak: raw.autoSpeak === true, language: raw.language === 'en-IN' ? 'en-IN' : 'ml-IN', voiceName: typeof raw.voiceName === 'string' ? raw.voiceName : '', rate: Math.max(.1, Math.min(1, rate)), volume: Math.max(0, Math.min(1, volume)) }; } catch (_) { return { autoSpeak:false, language:'ml-IN', voiceName:'', rate:.5, volume:1 }; } }
        function saveVoiceSettings() { localStorage.setItem(VOICE_KEY, JSON.stringify(voiceSettings)); }
         function boundedSpeechText(text) { return VOICE_POLICY.boundedSpeechText(text, VOICE_LIMIT); }
@@ -180,7 +243,7 @@
        function stopSpeaking() { if (!voiceSupported()) { setVoiceStatus('Text-to-speech is unavailable in this browser or device.', 'error'); return; } try { window.speechSynthesis.cancel(); } catch (_) { setVoiceStatus('The browser could not stop text-to-speech.', 'error'); } }
         function setupRecognition() { const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition; if (!Recognition) return; recognition = new Recognition(); recognition.lang = voiceSettings.language; recognition.interimResults = true; recognition.continuous = false; recognition.onresult = (event) => { let transcript = ''; for (let index = event.resultIndex; index < event.results.length; index += 1) transcript += event.results[index][0].transcript; $('composer').value = boundedSpeechText(transcript); }; recognition.onerror = (event) => { setVoiceStatus(event.error === 'not-allowed' ? 'Microphone permission was denied. Enable it in the browser to use push-to-talk.' : 'Speech recognition failed: ' + String(event.error || 'unknown error') + '.', 'error'); $('mic').dataset.listening = 'false'; $('mic').textContent = '♩ Mic'; }; recognition.onend = () => { $('mic').dataset.listening = 'false'; $('mic').textContent = '♩ Mic'; }; }
        function toggleRecognition() { if (!recognition) { setVoiceStatus('Push-to-talk is unsupported in this browser. Use the keyboard composer instead.', 'error'); return; } if ($('mic').dataset.listening === 'true') { recognition.stop(); $('mic').dataset.listening = 'false'; $('mic').textContent = '♩ Mic'; return; } recognition.lang = voiceSettings.language; try { recognition.start(); $('mic').dataset.listening = 'true'; $('mic').textContent = '■ Stop'; setVoiceStatus('Listening… speak now. Nothing will be sent automatically.', 'success'); } catch (_) { setVoiceStatus('Could not start the microphone. Check browser permission and try again.', 'error'); } }
-      function save() { localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-MAX_HISTORY))); }
+       function save() { localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-MAX_HISTORY))); localStorage.setItem(SECURITY_KEY, JSON.stringify(securityResults.slice(0, 24))); }
       function activeMode() { return mode; }
       function requestHistory(requestMode) { const matching = history.filter((item) => item.mode === requestMode); const newest = []; let totalChars = 0; for (let index = matching.length - 1; index >= 0; index -= 1) { if (newest.length >= CHAT_LIMITS.maxOutgoingHistoryItems || totalChars >= CHAT_LIMITS.maxOutgoingHistoryChars) break; const available = CHAT_LIMITS.maxOutgoingHistoryChars - totalChars; const content = String(matching[index].content || '').slice(0, Math.min(available, CHAT_LIMITS.maxOutgoingItemChars)); if (!content) continue; newest.push({ role: matching[index].role, content }); totalChars += content.length; } return newest.reverse(); }
       function setMode(value) { mode = value === 'online' ? 'online' : 'offline'; document.querySelectorAll('[data-mode]').forEach((button) => { button.classList.toggle('active', button.dataset.mode === mode); }); const online = mode === 'online'; $('top-badge').textContent = online ? '● ONLINE' : '● OFFLINE'; $('top-badge').className = 'badge ' + (online ? 'online' : 'offline'); }
@@ -189,11 +252,57 @@
         if (!history.length) { const empty = document.createElement('div'); empty.className = 'empty'; const wrap = document.createElement('div'); const strong = document.createElement('strong'); strong.textContent = 'Start with a clear mode'; const p = document.createElement('p'); p.textContent = 'Offline and online are explicit. WASTE never invents a response when the companion is unavailable.'; wrap.append(strong, p); empty.append(wrap); root.append(empty); return; }
          history.forEach((item) => { const message = document.createElement('article'); message.className = 'message ' + (item.role === 'user' ? 'user' : 'assistant'); const meta = document.createElement('div'); meta.className = 'message-meta'; const role = document.createElement('span'); role.textContent = item.role === 'user' ? 'YOU' : 'WASTE'; const badge = document.createElement('span'); badge.className = 'mini-badge'; badge.textContent = String(item.mode || 'offline').toUpperCase(); meta.append(role); if (item.role !== 'user') { const speak = document.createElement('button'); speak.type = 'button'; speak.className = 'speak-button'; speak.textContent = '🔊 Speak'; speak.setAttribute('aria-label', 'Speak assistant reply'); speak.addEventListener('click', () => speakText(String(item.content || ''))); meta.append(speak); } meta.append(badge); const content = document.createElement('div'); content.className = 'message-text'; content.textContent = String(item.content || ''); message.append(meta, content); root.append(message); }); root.scrollTop = root.scrollHeight;
       }
-      function renderNotes() {
-        const root = $('notes'); root.replaceChildren();
-        if (!notes.length) { const p = document.createElement('p'); p.textContent = 'No notes yet. Add one while offline.'; root.append(p); return; }
-        notes.forEach((note) => { const card = document.createElement('article'); card.className = 'note'; const text = document.createElement('p'); text.textContent = String(note.text || ''); const date = document.createElement('small'); date.textContent = new Date(note.createdAt).toLocaleString(); const remove = document.createElement('button'); remove.className = 'icon-button'; remove.type = 'button'; remove.setAttribute('aria-label', 'Delete note'); remove.textContent = '×'; remove.addEventListener('click', () => { if (window.confirm('Delete this local note?')) { notes = notes.filter((item) => item.id !== note.id); save(); renderNotes(); } }); card.append(text, date, remove); root.append(card); });
-      }
+       function renderNotes() {
+         const root = $('notes'); root.replaceChildren();
+         if (!notes.length) { const p = document.createElement('p'); p.textContent = 'No notes yet. Add one while offline.'; root.append(p); return; }
+         notes.forEach((note) => { const card = document.createElement('article'); card.className = 'note'; const text = document.createElement('p'); text.textContent = String(note.text || ''); const date = document.createElement('small'); date.textContent = new Date(note.createdAt).toLocaleString(); const remove = document.createElement('button'); remove.className = 'icon-button'; remove.type = 'button'; remove.setAttribute('aria-label', 'Delete note'); remove.textContent = '×'; remove.addEventListener('click', () => { if (window.confirm('Delete this local note?')) { notes = notes.filter((item) => item.id !== note.id); save(); renderNotes(); } }); card.append(text, date, remove); root.append(card); });
+       }
+       function securityBytes(bytes) { let value = Number(bytes) || 0; const units = ['B', 'KB', 'MB', 'GB']; let index = 0; while (value >= 1024 && index < units.length - 1) { value /= 1024; index += 1; } return (index === 0 ? String(Math.round(value)) : value.toFixed(value >= 10 ? 0 : 1)) + ' ' + units[index]; }
+       function securityHex(buffer) { return Array.from(new Uint8Array(buffer)).map((value) => value.toString(16).padStart(2, '0')).join(''); }
+       function classifySecurityFile(file, header) {
+         const name = String(file.name || 'Unnamed file');
+         if (!SECURITY_POLICY) return { name, extension:'', size:Number(file.size) || 0, mime:file.type || 'unknown', severity:'medium', label:'Inspection unavailable', findings:['The local security policy could not be loaded. No file verdict was produced.'], createdAt:new Date().toISOString() };
+         return Object.assign(SECURITY_POLICY.classifyFile(name, file.type, file.size, header), { createdAt:new Date().toISOString() });
+       }
+       async function inspectSecurityFile(file) {
+         let header = []; let readFailed = false;
+         try { header = Array.from(new Uint8Array(await file.slice(0, 64).arrayBuffer())); } catch (_) { readFailed = true; }
+         const result = classifySecurityFile(file, header);
+         if (readFailed) {
+           result.findings = result.findings.filter((finding) => !finding.startsWith('No local heuristic'));
+           result.findings.unshift('File content could not be read. Header inspection is incomplete; only the filename was reviewed.');
+           if (result.severity === 'low') result.severity = 'medium';
+           result.label = 'Inspection incomplete';
+         }
+         try { if (!readFailed && window.crypto && window.crypto.subtle && file.size <= 128 * 1024 * 1024) result.hash = securityHex(await window.crypto.subtle.digest('SHA-256', await file.arrayBuffer())); } catch (_) { result.hash = ''; }
+         return result;
+       }
+       function renderSecurity() {
+         const root = $('security-results'); root.replaceChildren(); const findings = securityResults.reduce((count, item) => count + (item.severity === 'low' ? 0 : 1), 0); $('security-total').textContent = String(securityResults.length); $('security-findings').textContent = String(findings);
+         if (!securityResults.length) { const empty = document.createElement('div'); empty.className = 'security-empty'; empty.textContent = 'No inspections yet. Choose a file to start a local review.'; root.append(empty); return; }
+         securityResults.forEach((item) => { const row = document.createElement('article'); row.className = 'scan-row'; const icon = document.createElement('div'); icon.className = 'file-icon'; icon.textContent = item.severity === 'high' ? '!' : item.severity === 'medium' ? '?' : '✓'; const details = document.createElement('div'); const name = document.createElement('div'); name.className = 'scan-name'; name.title = item.name; name.textContent = item.name; const meta = document.createElement('div'); meta.className = 'scan-meta'; meta.textContent = securityBytes(item.size) + ' · ' + (item.hash ? item.hash.slice(0, 12) + '…' : 'hash unavailable') + ' · ' + new Date(item.createdAt).toLocaleString(); details.append(name, meta); const risk = document.createElement('span'); risk.className = 'risk ' + item.severity; risk.textContent = item.label; row.append(icon, details, risk); row.title = item.findings.join(' '); root.append(row); });
+       }
+       async function inspectSecurityFiles(fileList) {
+         const files = Array.from(fileList || []);
+         if (!files.length || $('security-choose').disabled) return;
+         show($('security-progress'), true);
+         const bar = $('security-progress-bar'); const label = $('security-progress-label');
+         bar.style.width = '0%';
+         if (files.length > 24) { label.textContent = 'Select at most 24 files. No files were inspected.'; return; }
+         $('security-choose').disabled = true; $('security-clear').disabled = true;
+         try {
+           for (let index = 0; index < files.length; index += 1) {
+             label.textContent = 'Inspecting ' + (index + 1) + ' of ' + files.length + '…';
+             const result = await inspectSecurityFile(files[index]);
+             securityResults = [result, ...securityResults].slice(0, 24); renderSecurity();
+             bar.style.width = String(Math.round(((index + 1) / files.length) * 100)) + '%';
+           }
+           label.textContent = files.length + ' file(s) reviewed. Check each result for incomplete inspections.';
+           try { localStorage.setItem(SECURITY_KEY, JSON.stringify(securityResults)); }
+           catch (_) { label.textContent += ' History could not be saved; results remain in page memory only.'; }
+         } catch (_) { label.textContent = 'Inspection stopped unexpectedly. Not every selected file was reviewed.'; }
+         finally { $('security-choose').disabled = false; $('security-clear').disabled = false; }
+       }
       async function fetchJson(path, options = {}, authToken = token) {
         const controller = new AbortController(); const timeoutMs = path === '/chat' ? 100000 : 15000; const timer = window.setTimeout(() => controller.abort(), timeoutMs); const headers = Object.assign({ 'Accept': 'application/json' }, options.headers || {}); if (authToken) headers.Authorization = 'Bearer ' + authToken; if (options.body) headers['Content-Type'] = 'application/json';
         try { const response = await fetch(API + path, Object.assign({}, options, { headers, signal: controller.signal })); let data; try { data = await response.json(); } catch (_) { throw new Error('The companion returned an unreadable response.'); } if (!response.ok) throw new Error(String(data.error || ('Companion request failed (' + response.status + ').'))); return data; } catch (error) { if (error.name === 'AbortError') throw new Error('The companion took too long to respond. Check that it is running.'); if (error instanceof TypeError) throw new Error('Could not reach the companion. Check that this page is served by the companion.'); throw error; } finally { window.clearTimeout(timer); }
@@ -210,7 +319,7 @@
       document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => navigate(button.dataset.view)));
       document.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => setMode(button.dataset.mode)));
       $('send').addEventListener('click', send); $('composer').addEventListener('keydown', (event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); send(); } });
-      $('new-note').addEventListener('click', addNote); $('clear-notes').addEventListener('click', () => { if (notes.length && window.confirm('Clear every local note from this browser?')) { notes = []; save(); renderNotes(); } }); $('settings-clear-notes').addEventListener('click', () => { if (notes.length && window.confirm('Clear every local note from this browser?')) { notes = []; save(); renderNotes(); } }); $('clear-history').addEventListener('click', () => { if (history.length && window.confirm('Clear chat history from this browser?')) { history = []; save(); renderHistory(); } });
+       $('new-note').addEventListener('click', addNote); $('clear-notes').addEventListener('click', () => { if (notes.length && window.confirm('Clear every local note from this browser?')) { notes = []; save(); renderNotes(); } }); $('settings-clear-notes').addEventListener('click', () => { if (notes.length && window.confirm('Clear every local note from this browser?')) { notes = []; save(); renderNotes(); } }); $('clear-history').addEventListener('click', () => { if (history.length && window.confirm('Clear chat history from this browser?')) { history = []; save(); renderHistory(); } }); $('security-choose').addEventListener('click', () => $('security-file-input').click()); $('security-file-input').addEventListener('change', (event) => { inspectSecurityFiles(event.target.files); event.target.value = ''; }); $('security-clear').addEventListener('click', () => { if (securityResults.length && window.confirm('Clear local security inspection history from this browser?')) { securityResults = []; save(); renderSecurity(); } });
        $('pair').addEventListener('click', () => { token = $('token').value.trim(); $('token').value = ''; setMessage('settings-status', token ? 'Token set in page memory; it has not been verified.' : 'No token entered; chat stays unavailable.', token ? 'success' : 'error'); show($('settings-status'), true); $('settings-badge').textContent = token ? '● TOKEN SET' : '● DISCONNECTED'; $('settings-badge').className = 'badge offline'; }); $('disconnect').addEventListener('click', () => { token = ''; $('settings-badge').textContent = '● DISCONNECTED'; $('settings-badge').className = 'badge offline'; setMessage('settings-status', 'Token forgotten from page memory.', 'success'); show($('settings-status'), true); }); $('health').addEventListener('click', checkHealth); $('open-calculator').addEventListener('click', () => prepareAction('open_calculator', 'Open Calculator')); $('open-notepad').addEventListener('click', () => prepareAction('open_notepad', 'Open Notepad'));
        $('setup-pair').addEventListener('click', () => { token = $('setup-token').value.trim(); $('setup-token').value = ''; show($('setup'), false); if (token) { $('settings-badge').textContent = '● TOKEN SET'; $('settings-badge').className = 'badge offline'; } }); $('setup-explore').addEventListener('click', () => show($('setup'), false));
        $('mic').addEventListener('click', toggleRecognition); $('test-voice').addEventListener('click', () => speakText('This is a WASTE voice test.')); $('stop-voice').addEventListener('click', () => { stopSpeaking(); setVoiceStatus('Speech stopped.', 'success'); }); $('auto-speak').checked = voiceSettings.autoSpeak; $('voice-language').value = voiceSettings.language; $('voice-rate').value = String(voiceSettings.rate); $('voice-volume').value = String(voiceSettings.volume); $('voice-rate-value').textContent = voiceSettings.rate.toFixed(1); $('voice-volume-value').textContent = voiceSettings.volume.toFixed(1);
@@ -218,7 +327,7 @@
        const computerBrowser = /Windows/i.test(navigator.userAgent) && !/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
        if (!computerBrowser) { $('open-calculator').disabled = true; $('open-notepad').disabled = true; $('device-note').textContent = 'This is a device or non-Windows browser. Computer companion actions are unavailable here.'; }
        if (!voiceSupported()) setVoiceStatus('Text-to-speech is unavailable in this browser or device.', 'error'); else { refreshDeviceVoices(); if (typeof window.speechSynthesis.onvoiceschanged !== 'undefined') window.speechSynthesis.onvoiceschanged = refreshDeviceVoices; } setupRecognition();
-       setMode(mode); renderHistory(); renderNotes();
+       setMode(mode); renderHistory(); renderNotes(); renderSecurity();
     })();
   </script>
 </body>
